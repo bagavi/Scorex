@@ -8,7 +8,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.4.17" % "test"
 )
 
-mainClass in assembly := Some("examples.hybrid.HybridApp")
+mainClass in assembly := Some("examples.prism1.PrismV1App")
 
 assemblyJarName in assembly := "twinsChain.jar"
 
@@ -18,4 +18,4 @@ testForkedParallel in Test := true
 
 test in assembly := {}
 
-coverageExcludedPackages := "examples\\.hybrid\\.api\\.http.*"
+coverageExcludedPackages := "examples\\.prism1\\.api\\.http.*"
