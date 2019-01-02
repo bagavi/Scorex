@@ -1,16 +1,16 @@
 package hybrid.history
 
 import java.io.File
-import com.typesafe.config.Config
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.ValueReader
-import examples.hybrid.mining.{HybridMiningSettings, WalletSettings}
-import examples.hybrid.history.HistoryStorage
+
+import examples.hybrid.mining.HybridSettings
+
+import examples.hybrid.history.{HistoryStorage, HybridHistory}
 import io.iohk.iodb.LSMStore
 import org.scalatest.PropSpec
-import scorex.core.settings.ScorexSettings
-import scorex.core.settings.ScorexSettings.readConfigFromPath
+
+import scorex.core.utils.NetworkTimeProvider
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ReadJournal extends PropSpec{
   /**
@@ -19,21 +19,22 @@ class ReadJournal extends PropSpec{
     * TODO: understand the output.
     */
   {
-    val userConfigPath = Some("examples/src/main/resources/settings.conf")
-    val config = readConfigFromPath(userConfigPath, "scorex")
-    val dataDir = config.getString("scorex.dataDir")
-    val miningSettings = config.as[HybridMiningSettings]("scorex.miner")
+    val userConfigPath = "examples/src/main/resources/settings.conf"
+    val hybridSettings = HybridSettings.read(Some(userConfigPath))
+    val dataDir = hybridSettings.scorexSettings.dataDir
+//    println(dataDir)
+
     val blockStorage = new LSMStore(new File(dataDir + "/blocks"), maxJournalEntryCount = 10000)
-    //    val dir = "/tmp/scorex/data/blockchain/blocks"
-//    val dir = "/tmp/scorex/data/blockchain/state"
-//    val dir = "/tmp/scorex/data/wallet/wallet.dat"
 //    blockStorage.getAll((K,V) => println(K,V))
 
-//    val walletSettings = config.as[WalletSettings]("scorex.wallet")
-//    val scorexSettings = config.as[ScorexSettings]("scorex")
 
-    val historyStorage = new HistoryStorage(blockStorage, miningSettings)
-    //TODO
+    val historyStorage = new HistoryStorage(blockStorage, hybridSettings.mining)
+    //we don't care about validation here
+    val validators = Seq()
+    val hybridHistory = new HybridHistory(historyStorage, hybridSettings.mining, validators, None, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
+    println(hybridHistory.lastPowBlocks(100, hybridHistory.bestPowBlock))
+//    println(historyStorage.getPoWDifficulty(None))
+//    println(historyStorage.height)
     blockStorage.close()
   }
 }
