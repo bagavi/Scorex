@@ -12,7 +12,7 @@ while read -r line || [[ -n "$line" ]]; do
     IFS=':, ' read -r -a array <<< "$line"
     if [ "${#array[@]}" -ge "1" ]; then
 		mkdir -p "/tmp/scorex/data${array[0]}/log"
-		nohup sbt "; project examples; runMain examples.hybrid.HybridApp src/main/resources/testbench/settings${array[0]}.conf" > /tmp/scorex/data${array[0]}/log/stdout.data 2> /tmp/scorex/data${array[0]}/log/stderr.data &
+		nohup sbt "; project examples; runMain examples.prism1.PrismV1App src/main/resources/testbench/settings${array[0]}.conf" > /tmp/scorex/data${array[0]}/log/stdout.data 2> /tmp/scorex/data${array[0]}/log/stderr.data &
 		echo "start ${array[0]}"
 		sleep 3
     fi
@@ -20,6 +20,7 @@ done < "$my_dir/$1"
 
 #sbt "; project examples; runMain examples.hybrid.HybridApp src/main/resources/settings.conf"
 
-#how to terminate?
-#try use pkill ?
-#or: rm all data, the program will terminate? no
+#how to terminate:
+#kill -9 `ps -h | grep java | grep -v sbt-launch | grep -v grep | awk '{print $1}'`
+#or
+#ps -h | grep java | grep -v sbt-launch | grep -v idea | grep -v grep | awk '{print $1}'

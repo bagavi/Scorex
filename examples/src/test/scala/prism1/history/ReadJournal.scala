@@ -1,13 +1,11 @@
-package hybrid.history
+package prism1.history
 
 import java.io.File
 
-import examples.hybrid.mining.HybridSettings
-
-import examples.hybrid.history.{HistoryStorage, HybridHistory}
+import examples.prism1.history.{HistoryStorage, HybridHistory}
+import examples.prism1.mining.HybridSettings
 import io.iohk.iodb.LSMStore
 import org.scalatest.PropSpec
-
 import scorex.core.utils.NetworkTimeProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,10 +17,10 @@ class ReadJournal extends PropSpec{
     * TODO: understand the output.
     */
   {
-    val userConfigPath = "examples/src/main/resources/settings.conf"
+    val userConfigPath = "src/main/resources/settings.conf"
+//    val userConfigPath = "examples/src/main/resources/settings.conf" // whether use this or above path?
     val hybridSettings = HybridSettings.read(Some(userConfigPath))
     val dataDir = hybridSettings.scorexSettings.dataDir
-//    println(dataDir)
 
     val blockStorage = new LSMStore(new File(dataDir + "/blocks"), maxJournalEntryCount = 10000)
 //    blockStorage.getAll((K,V) => println(K,V))
@@ -33,8 +31,7 @@ class ReadJournal extends PropSpec{
     val validators = Seq()
     val hybridHistory = new HybridHistory(historyStorage, hybridSettings.mining, validators, None, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
     println(hybridHistory.lastPowBlocks(100, hybridHistory.bestPowBlock))
-//    println(historyStorage.getPoWDifficulty(None))
-//    println(historyStorage.height)
+
     blockStorage.close()
   }
 }
