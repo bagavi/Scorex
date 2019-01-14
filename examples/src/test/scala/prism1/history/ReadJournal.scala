@@ -1,6 +1,6 @@
 package prism1.history
 
-import java.io.File
+import java.io.{BufferedWriter, File, FileWriter}
 
 import examples.prism1.history.{HistoryStorage, HybridHistory}
 import examples.prism1.mining.HybridSettings
@@ -30,7 +30,10 @@ class ReadJournal extends PropSpec{
     //we don't care about validation here
     val validators = Seq()
     val hybridHistory = new HybridHistory(historyStorage, hybridSettings.mining, validators, None, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
-    println(hybridHistory.lastPowBlocks(100, hybridHistory.bestPowBlock))
+    val bw = new BufferedWriter(new FileWriter(new File(dataDir + "/blocks/readable.txt")))
+    hybridHistory.lastPowBlocks(100, hybridHistory.bestPowBlock).foreach {
+      line => bw.write(line.toString)
+      bw.write(System.getProperty("line.separator"))}
 
     blockStorage.close()
   }
