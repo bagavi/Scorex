@@ -94,15 +94,11 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val difficulty = pmi.powDifficulty
         val bestPowBlock = pmi.bestPowBlock
 
-        val (parentId, prevPosId, brothers) = if (!pmi.pairCompleted) {
-          //brother
-          log.info(s"Starting brother mining for ${encoder.encodeId(bestPowBlock.parentId)}:${encoder.encodeId(bestPowBlock.prevPosId)}")
-          val bs = bestPowBlock.brothers :+ bestPowBlock.header
-          (bestPowBlock.parentId, bestPowBlock.prevPosId, bs)
-        } else {
-          log.info(s"Starting new block mining for ${bestPowBlock.encodedId}:${encoder.encodeId(pmi.bestPosId)}")
-          (bestPowBlock.id, pmi.bestPosId, Seq()) //new step
-        }
+        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}:${encoder.encodeId(pmi.bestPosId)}")
+        // V: In hybrid protocol the "next" PoW block was mined only when the current best PoWblock was paired to a PoS
+        // block. Here we always try to mine the next PoW block
+        val (parentId, prevPosId, brothers) = (bestPowBlock.id, pmi.bestPosId, Seq()) //new step
+
         val pubkey = pmi.pubkey
 
         val p = Promise[Option[PowBlock]]()
