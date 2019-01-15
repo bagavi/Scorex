@@ -3,7 +3,7 @@ package examples.prism1
 import akka.actor.{ActorRef, ActorSystem, Props}
 import examples.commons._
 import examples.prism1.blocks._
-import examples.prism1.history.{HybridHistory, HybridSyncInfo}
+import examples.prism1.history.{HybridHistory, HybridHistoryVisualizer, HybridSyncInfo}
 import examples.prism1.mining.{HybridMiningSettings, HybridSettings}
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
@@ -17,6 +17,10 @@ import scorex.core.{ModifierTypeId, NodeViewHolder, NodeViewModifier}
 import scorex.util.encode.Base58
 import scorex.crypto.signatures.PublicKey
 import scorex.util.ScorexLogging
+
+//import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 
 class HybridNodeViewHolder(hybridSettings: HybridSettings,
@@ -32,11 +36,34 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
   override lazy val scorexSettings: ScorexSettings = hybridSettings.scorexSettings
   private lazy val minerSettings: HybridMiningSettings = hybridSettings.mining
 
+  protected val visualizer: ActorRef = context.actorOf(HybridHistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
+  protected val visualizeTimer = context.system.scheduler.schedule(5 second, 10 seconds, self, HybridHistoryVisualizer.VisualizeClock)
+
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
     log.error("HybridNodeViewHolder has been restarted, not a valid situation!")
     reason.printStackTrace()
     System.exit(100) // this actor shouldn't be restarted at all so kill the whole app if that happened
+  }
+
+
+  /**
+    * Cancel the timer
+    */
+  override def postStop(): Unit = {
+    super.postStop()
+    visualizeTimer.cancel()
+  }
+
+  /**
+    * Extend receive VisualizeClock
+    */
+  def receiveVisualizeClock: Receive = {
+    case HybridHistoryVisualizer.VisualizeClock =>
+      visualizer ! HybridHistoryVisualizer.VisualizeToFile(history().lastPowBlocks(Int.MaxValue, history().bestPowBlock))
+  }
+  override def receive: Receive = {
+    receiveVisualizeClock orElse super.receive
   }
 
   /**
