@@ -9,7 +9,6 @@ import scorex.util.ScorexLogging
 
 class HLocalInterface(viewHolderRef: ActorRef,
                       powMinerRef: ActorRef,
-                      posForgerRef: ActorRef,
                       minerSettings: HybridMiningSettings) extends Actor with ScorexLogging {
 
   import examples.prism1.mining.PosForger.ReceivableMessages.{StartForging, StopForging}
@@ -29,14 +28,10 @@ class HLocalInterface(viewHolderRef: ActorRef,
     //stop PoW miner and start PoS forger if PoW block comes
     //stop PoW forger and start PoW miner if PoS block comes
     case sems: SemanticallySuccessfulModifier[_] =>
-      log.info("Success. Now at HLI")
       if (!block) {
         sems.modifier match {
           case wb: PowBlock =>
             powMinerRef ! MineBlock
-
-          case sb: PosBlock =>
-            log.info("This shouldn't have entered here!")
         }
       }
 
@@ -53,21 +48,18 @@ class HLocalInterface(viewHolderRef: ActorRef,
 object HLocalInterfaceRef {
   def props(viewHolderRef: ActorRef,
             powMinerRef: ActorRef,
-            posForgerRef: ActorRef,
             minerSettings: HybridMiningSettings): Props =
-    Props(new HLocalInterface(viewHolderRef, powMinerRef, posForgerRef, minerSettings))
+    Props(new HLocalInterface(viewHolderRef, powMinerRef, minerSettings))
 
   def apply(viewHolderRef: ActorRef,
             powMinerRef: ActorRef,
-            posForgerRef: ActorRef,
             minerSettings: HybridMiningSettings)
            (implicit system: ActorSystem): ActorRef =
-    system.actorOf(props(viewHolderRef, powMinerRef, posForgerRef, minerSettings))
+    system.actorOf(props(viewHolderRef, powMinerRef, minerSettings))
 
   def apply(name: String, viewHolderRef: ActorRef,
             powMinerRef: ActorRef,
-            posForgerRef: ActorRef,
             minerSettings: HybridMiningSettings)
            (implicit system: ActorSystem): ActorRef =
-    system.actorOf(props(viewHolderRef, powMinerRef, posForgerRef, minerSettings), name)
+    system.actorOf(props(viewHolderRef, powMinerRef, minerSettings), name)
 }

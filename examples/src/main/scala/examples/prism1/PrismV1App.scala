@@ -54,9 +54,8 @@ class PrismV1App(val settingsFilename: String) extends Application {
   override val swaggerConfig: String = Source.fromResource("api/testApi.yaml").getLines.mkString("\n")
 
   val miner: ActorRef = PowMinerRef(nodeViewHolderRef, hybridSettings.mining)
-  val forger: ActorRef = PosForgerRef(hybridSettings, nodeViewHolderRef)
 
-  val localInterface: ActorRef = HLocalInterfaceRef(nodeViewHolderRef, miner, forger, hybridSettings.mining)
+  val localInterface: ActorRef = HLocalInterfaceRef(nodeViewHolderRef, miner, hybridSettings.mining)
 
   override val nodeViewSynchronizer: ActorRef =
     actorSystem.actorOf(NodeViewSynchronizerRef.props[SimpleBoxTransactionPrism, HybridSyncInfo, HybridSyncInfoMessageSpec.type,
