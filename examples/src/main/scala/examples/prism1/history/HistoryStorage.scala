@@ -19,7 +19,7 @@ class HistoryStorage(storage: LSMStore,
   private val bestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
   private val bestPosIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-2: Byte))
 
-  def height: Long = Math.max(heightOf(bestPowId).getOrElse(0L), heightOf(bestPosId).getOrElse(0L))
+  def height: Long = heightOf(bestPowId).getOrElse(0L)
 
   def bestChainScore: Long = height
 
@@ -137,7 +137,7 @@ class HistoryStorage(storage: LSMStore,
   def parentHeight(b: HybridBlock): Long = heightOf(parentId(b)).getOrElse(0L)
 
   def parentId(block: HybridBlock): ModifierId = block match {
-    case powBlock: PowBlock => powBlock.prevPosId
+    case powBlock: PowBlock => powBlock.parentId //
     case posBlock: PosBlock => posBlock.parentId
   }
 

@@ -102,22 +102,17 @@ class HybridHistory(val storage: HistoryStorage,
     } else {
       storage.heightOf(powBlock.parentId) match {
         case Some(_) =>
-          val isBestBrother = (bestPosId == powBlock.prevPosId) &&
-            (bestPowBlock.brothersCount < powBlock.brothersCount)
 
           //potentially the best block, if its not a block in a fork containing invalid block
-          val isBest: Boolean = storage.height == storage.parentHeight(powBlock) || isBestBrother
+          val isBest: Boolean = storage.height == storage.parentHeight(powBlock)
 
           val mod: ProgressInfo[HybridBlock] = if (isBest) {
-            if (isGenesis(powBlock) || (powBlock.parentId == bestPowId && powBlock.prevPosId == bestPosId)) {
+            if (isGenesis(powBlock) || powBlock.parentId == bestPowId ) {
               log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)}")
               //just apply one block to the end
               ProgressInfo(None, Seq(), Seq(powBlock), Seq())
-            } else if (isBestBrother) {
-              log.info(s"New best brother ${encoder.encodeId(powBlock.id)}")
-              //new best brother
-              ProgressInfo(Some(powBlock.prevPosId), Seq(bestPowBlock), Seq(powBlock), Seq())
             } else {
+              // ToDo: Vivek: I am not sure of the logic here
               //we're switching to a better chain, if it does not contain an invalid block
               bestForkChanges(powBlock)
             }
