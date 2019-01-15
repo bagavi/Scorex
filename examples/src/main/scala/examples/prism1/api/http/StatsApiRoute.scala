@@ -36,10 +36,8 @@ case class StatsApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
       ApiTry {
         val count = (view.history.height - start).toInt
         val ids: Seq[ModifierId] = view.history.lastBlockIds(view.history.bestBlock, count).take(end - start)
-        val posDiff = ids.flatMap(id => Try(view.history.storage.getPoSDifficulty(id)).toOption)
         val powDiff = ids.flatMap(id => Try(view.history.storage.getPoWDifficulty(Some(id))).toOption)
         ApiResponse(
-          "posDiff" -> (posDiff.sum / posDiff.length).asJson,
           "powDiff" -> (powDiff.sum / powDiff.length).asJson
         )
       }
