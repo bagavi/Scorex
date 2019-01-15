@@ -1,7 +1,7 @@
 package examples.prism1
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import examples.prism1.blocks.{PosBlock, PowBlock}
+import examples.prism1.blocks.{PowBlock}
 import examples.prism1.mining.HybridMiningSettings
 import scorex.core.network.NodeViewSynchronizer.Events.{BetterNeighbourAppeared, NoBetterNeighbour, NodeViewSynchronizerEvent}
 import scorex.core.network.NodeViewSynchronizer.ReceivableMessages.{NodeViewHolderEvent, RollbackFailed, SemanticallySuccessfulModifier}
@@ -11,7 +11,6 @@ class HLocalInterface(viewHolderRef: ActorRef,
                       powMinerRef: ActorRef,
                       minerSettings: HybridMiningSettings) extends Actor with ScorexLogging {
 
-  import examples.prism1.mining.PosForger.ReceivableMessages.{StartForging, StopForging}
   import examples.prism1.mining.PowMiner.ReceivableMessages.{MineBlock, StartMining, StopMining}
 
   private var block = false

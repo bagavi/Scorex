@@ -1,6 +1,6 @@
 package examples.prism1.validation
 
-import examples.prism1.blocks.{HybridBlock, PosBlock, PowBlock}
+import examples.prism1.blocks.{HybridBlock, PowBlock}
 import scorex.core.block.BlockValidator
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
@@ -19,9 +19,6 @@ class SemanticBlockValidator(hash: CryptographicHash[_ <: Digest]) extends Block
         if (powBlock.brothersCount > 0) {
           require(java.util.Arrays.equals(hash(powBlock.brotherBytes), powBlock.brothersHash))
         }
-      case posBlock: PosBlock =>
-        require(posBlock.timestamp >= 0)
-        require(PosBlock.signatureValid(posBlock))
     }
   }
 

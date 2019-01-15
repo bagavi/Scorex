@@ -34,7 +34,6 @@ class ReadJournal extends PropSpec{
     hybridHistory.lastPowBlocks(100, hybridHistory.bestPowBlock).foreach {
       line => bw.write(line.toString)
       bw.write(System.getProperty("line.separator"))}
-
     blockStorage.close()
   }
 }

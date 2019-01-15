@@ -40,7 +40,7 @@ object HybridSettings extends ScorexLogging with SettingsReaders {
     (cfg: Config, path: String) => fromConfig(cfg.getConfig(path))
 
   private def fromConfig(config: Config): HybridSettings = {
-    log.info(config.toString)
+    log.debug(config.toString)
     val walletSettings = config.as[WalletSettings]("scorex.wallet")
     val miningSettings = config.as[HybridMiningSettings]("scorex.miner")
     val scorexSettings = config.as[ScorexSettings]("scorex")

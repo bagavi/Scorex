@@ -40,13 +40,7 @@ class HybridHistory(val storage: HistoryStorage,
 
   require(NodeViewModifier.ModifierIdSize == 32, "32 bytes ids assumed")
 
-  lazy val pairCompleted: Boolean =
-    (storage.bestPowId == settings.GenesisParentId, bestPosId == settings.GenesisParentId) match {
-      case (true, true) => true
-      case (false, true) => false
-      case (false, false) => bestPosBlock.parentId == bestPowId
-      case (true, false) => ??? //shouldn't be
-    }
+  lazy val pairCompleted: Boolean = true
 
   val height: Long = storage.height
   val bestPosId: ModifierId = storage.bestPosId
@@ -108,7 +102,7 @@ class HybridHistory(val storage: HistoryStorage,
 
           val mod: ProgressInfo[HybridBlock] = if (isBest) {
             if (isGenesis(powBlock) || powBlock.parentId == bestPowId ) {
-              log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)}")
+              log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)} at height ${storage.height}")
               //just apply one block to the end
               ProgressInfo(None, Seq(), Seq(powBlock), Seq())
             } else {
@@ -132,30 +126,6 @@ class HybridHistory(val storage: HistoryStorage,
     (new HybridHistory(storage, settings, validators, statsLogger, timeProvider), progress)
   }
 
-  private def posBlockAppend(posBlock: PosBlock): (HybridHistory, ProgressInfo[HybridBlock]) = {
-    val difficulties = calcDifficultiesForNewBlock(posBlock)
-    // TODO: review me .get and asInstanceOf
-    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-    val parent = modifierById(posBlock.parentId).get.asInstanceOf[PowBlock]
-    val isBest = storage.height == storage.parentHeight(posBlock)
-
-    val mod: ProgressInfo[HybridBlock] = if (!isBest) {
-      log.info(s"New orphaned PoS block ${encoder.encodeId(posBlock.id)}")
-      ProgressInfo(None, Seq(), Seq(), Seq())
-    } else if (posBlock.parentId == bestPowId) {
-      log.info(s"New best PoS block ${encoder.encodeId(posBlock.id)}")
-      ProgressInfo(None, Seq(), Seq(posBlock), Seq())
-    } else if (parent.prevPosId == bestPowBlock.prevPosId) {
-      log.info(s"New best PoS block with link to non-best brother ${encoder.encodeId(posBlock.id)}")
-      //rollback to previous PoS block and apply parent block one more time
-      ProgressInfo(Some(parent.prevPosId), Seq(bestPowBlock), Seq[HybridBlock](parent, posBlock), Seq())
-    } else {
-      bestForkChanges(posBlock)
-    }
-    storage.update(posBlock, Some(difficulties), isBest)
-
-    (new HybridHistory(storage, settings, validators, statsLogger, timeProvider), mod)
-  }
 
   /**
     * @param block - block to append
@@ -173,12 +143,11 @@ class HybridHistory(val storage: HistoryStorage,
 
     val res: (HybridHistory, ProgressInfo[HybridBlock]) = block match {
       case powBlock: PowBlock => powBlockAppend(powBlock)
-      case posBlock: PosBlock => posBlockAppend(posBlock)
     }
 
     log.info(s"History: block ${encoder.encodeId(block.id)} appended to chain with score ${storage.heightOf(block.id)}. " +
       s"Best score is ${storage.bestChainScore}. " +
-      s"Pair: ${encoder.encodeId(storage.bestPowId)}|${encoder.encodeId(storage.bestPosId)}")
+      s"Pair: ${encoder.encodeId(storage.bestPowId)}")
     statsLogger.foreach(l => l.appendString(timeProvider.time() + ":" +
       lastBlockIds(bestBlock, 50).map(encoder.encodeId).mkString(",")))
     res
@@ -214,57 +183,14 @@ class HybridHistory(val storage: HistoryStorage,
     }
   }
 
-  private def calcDifficultiesForNewBlock(posBlock: PosBlock): (BigInt, BigInt) = {
-    def bounded(newVal: BigInt, oldVal: BigInt): BigInt = if (newVal > oldVal * 2) oldVal * 2 else newVal
-
-    val powHeight = storage.parentHeight(posBlock) / 2 + 1
-    if (powHeight > DifficultyRecalcPeriod && powHeight % DifficultyRecalcPeriod == 0) {
-
-      //recalc difficulties
-
-      // TODO: review me .get and asInstanceOf
-      @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-      val lastPow = modifierById(posBlock.parentId).get.asInstanceOf[PowBlock]
-      val powBlocks = lastPowBlocks(DifficultyRecalcPeriod, lastPow) //.ensuring(_.length == DifficultyRecalcPeriod)
-
-      // TODO: fixme, What should we do if `powBlocksHead` is empty?
-      @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
-      val powBlocksHead = powBlocks.head
-      val realTime = lastPow.timestamp - powBlocksHead.timestamp
-      val brothersCount = powBlocks.map(_.brothersCount).sum
-      val expectedTime = (DifficultyRecalcPeriod + brothersCount) * settings.targetBlockDelay.toMillis
-      val oldPowDifficulty = storage.getPoWDifficulty(Some(lastPow.prevPosId))
-
-      val newPowDiffUnlimited = (oldPowDifficulty * expectedTime / realTime).max(BigInt(1L))
-      val newPowDiff = bounded(newPowDiffUnlimited, oldPowDifficulty)
-
-      val oldPosDifficulty = storage.getPoSDifficulty(lastPow.prevPosId)
-      val newPosDiff = oldPosDifficulty * DifficultyRecalcPeriod / ((DifficultyRecalcPeriod + brothersCount) * settings.rParamX10 / 10)
-      log.info(s"PoW difficulty changed at ${encoder.encodeId(posBlock.id)}: old $oldPowDifficulty, new $newPowDiff. " +
-        s" last: $lastPow, head: $powBlocksHead | $brothersCount")
-      log.info(s"PoS difficulty changed: old $oldPosDifficulty, new $newPosDiff")
-      (newPowDiff, newPosDiff)
-    } else {
-      //Same difficulty as in previous block
-      assert(modifierById(posBlock.parentId).isDefined, "Parent should always be in history")
-      // TODO: review me .get and asInstanceOf
-      @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-      val parentPoSId: ModifierId = modifierById(posBlock.parentId).get.asInstanceOf[PowBlock].prevPosId
-      (storage.getPoWDifficulty(Some(parentPoSId)), storage.getPoSDifficulty(parentPoSId))
-    }
-  }
-
   override def openSurfaceIds(): Seq[ModifierId] =
     if (isEmpty) Seq(settings.GenesisParentId)
-    else if (pairCompleted) Seq(bestPowId, bestPosId)
     else Seq(bestPowId)
 
   override def applicableTry(block: HybridBlock): Try[Unit] = {
     block match {
-      case pwb: PowBlock if !contains(pwb.parentId) || !contains(pwb.prevPosId) =>
-        Failure(new RecoverableModifierError("Parent block or previous PoS block is not in history yet"))
-      case psb: PosBlock if !contains(psb.parentId) =>
-        Failure(new RecoverableModifierError("Parent block is not in history yet"))
+      case pwb: PowBlock if !contains(pwb.parentId) =>
+        Failure(new RecoverableModifierError("Parent block  not in history yet"))
       case _ =>
         Success()
     }
@@ -334,11 +260,7 @@ class HybridHistory(val storage: HistoryStorage,
         // `dSuffix.head` is safe as `dSuffix.length` is 1
         @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
         val dSuffixHead = dSuffix.head
-        if (dSuffixHead == bestPowId) {
-          if (other.lastPosBlockId == bestPosId) Equal
-          else if (pairCompleted) Older
-          else Younger
-        }
+        if (dSuffixHead == bestPowId) Equal //Vivek: Changed here with low confidence
         else Younger
       case _ =>
         // +1 to include common block
@@ -354,13 +276,11 @@ class HybridHistory(val storage: HistoryStorage,
   }
 
   lazy val powDifficulty = storage.getPoWDifficulty(None)
-  lazy val posDifficulty = storage.getPoSDifficulty(storage.bestPosBlock.id)
 
   private def isGenesis(b: HybridBlock): Boolean = storage.isGenesis(b)
 
   def blockGenerator(m: HybridBlock): PublicKey25519Proposition = m match {
     case p: PosBlock => p.generatorBox.proposition
-    case p: PowBlock => p.generatorProposition
   }
 
   def generatorDistribution(): Map[PublicKey25519Proposition, Int] = {
@@ -467,7 +387,7 @@ class HybridHistory(val storage: HistoryStorage,
   // TODO: review me .get
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   override def toString: String = {
-    chainBack(storage.bestPosBlock, isGenesis).get.map(_._2).map(encoder.encodeId).mkString(",")
+    chainBack(storage.bestPowBlock, isGenesis).get.map(_._2).map(encoder.encodeId).mkString(",")
   }
 
   override def reportModifierIsValid(modifier: HybridBlock): HybridHistory = {

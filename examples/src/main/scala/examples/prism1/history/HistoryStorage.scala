@@ -3,7 +3,7 @@ package examples.prism1.history
 import com.google.common.primitives.Longs
 import examples.commons.idToBAW
 import examples.prism1.blocks._
-import examples.prism1.mining.{HybridMiningSettings, PosForger}
+import examples.prism1.mining.{HybridMiningSettings}
 import io.iohk.iodb.{ByteArrayWrapper, LSMStore}
 import scorex.core.consensus.ModifierSemanticValidity
 import scorex.core.consensus.ModifierSemanticValidity.{Absent, Unknown}
@@ -126,19 +126,11 @@ class HistoryStorage(storage: LSMStore,
     }
   }
 
-  // TODO: review me .get
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-  def getPoSDifficulty(id: ModifierId): BigInt = if (id == settings.GenesisParentId) {
-    PosForger.InitialDifficuly
-  } else {
-    BigInt(storage.get(blockDiffKey(id, isPos = true)).get.data)
-  }
 
   def parentHeight(b: HybridBlock): Long = heightOf(parentId(b)).getOrElse(0L)
 
   def parentId(block: HybridBlock): ModifierId = block match {
     case powBlock: PowBlock => powBlock.parentId //
-    case posBlock: PosBlock => posBlock.parentId
   }
 
   private def validityKey(b: HybridBlock): ByteArrayWrapper =
