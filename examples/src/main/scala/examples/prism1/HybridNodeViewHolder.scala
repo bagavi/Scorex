@@ -3,7 +3,7 @@ package examples.prism1
 import akka.actor.{ActorRef, ActorSystem, Props}
 import examples.commons._
 import examples.prism1.blocks._
-import examples.prism1.history.{HybridHistory, HybridHistoryVisualizer, HybridSyncInfo}
+import examples.prism1.history.{HybridHistory, HistoryVisualizer, HybridSyncInfo}
 import examples.prism1.mining.{HybridMiningSettings, HybridSettings}
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
@@ -36,8 +36,8 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
   override lazy val scorexSettings: ScorexSettings = hybridSettings.scorexSettings
   private lazy val minerSettings: HybridMiningSettings = hybridSettings.mining
 
-  protected val visualizer: ActorRef = context.actorOf(HybridHistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
-  protected val visualizeTimer = context.system.scheduler.schedule(5 second, 10 seconds, self, HybridHistoryVisualizer.VisualizeClock)
+  protected val visualizer: ActorRef = context.actorOf(HistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
+  protected val visualizeTimer = context.system.scheduler.schedule(5 second, 30 seconds, self, HistoryVisualizer.VisualizeClock)
 
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
@@ -59,8 +59,8 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
     * Extend receive VisualizeClock
     */
   def receiveVisualizeClock: Receive = {
-    case HybridHistoryVisualizer.VisualizeClock =>
-      visualizer ! HybridHistoryVisualizer.VisualizeToFile(history().lastPowBlocks(Int.MaxValue, history().bestPowBlock))
+    case HistoryVisualizer.VisualizeClock =>
+      visualizer ! HistoryVisualizer.VisualizeToFile(history().lastPowBlocks(Int.MaxValue, history().bestPowBlock))
   }
   override def receive: Receive = {
     receiveVisualizeClock orElse super.receive

@@ -8,8 +8,8 @@ import examples.prism1.blocks.HybridBlock
 
 import scala.concurrent.ExecutionContext
 
-class HybridHistoryVisualizer(dir: String)(implicit ec: ExecutionContext) extends Actor {
-  import HybridHistoryVisualizer._
+class HistoryVisualizer(dir: String)(implicit ec: ExecutionContext) extends Actor {
+  import HistoryVisualizer._
   protected val dir1 = dir.stripSuffix("/")
 //  import context.dispatcher
 //  protected val visualizeTimer = context.system.scheduler.schedule(5 second, 10 seconds, self, VisualizeToFile)
@@ -35,10 +35,10 @@ class HybridHistoryVisualizer(dir: String)(implicit ec: ExecutionContext) extend
   }
 }
 
-object HybridHistoryVisualizer {
+object HistoryVisualizer {
   case object VisualizeClock
   final case class VisualizeToFile(blocks: Seq[HybridBlock])
 
   def props(dir: String)(implicit ec: ExecutionContext): Props =
-    Props(new HybridHistoryVisualizer(dir))
+    Props(new HistoryVisualizer(dir))
 }
