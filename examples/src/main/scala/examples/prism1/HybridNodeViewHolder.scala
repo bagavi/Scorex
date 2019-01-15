@@ -64,6 +64,7 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
   def generateGenesisState(hybridSettings: HybridSettings,
                            timeProvider: NetworkTimeProvider):
   (HybridHistory, HBoxStoredState, HBoxWallet, SimpleBoxTransactionPrismMemPool) = {
+    log.info("Entered GenesisState Function")
     val settings: ScorexSettings = hybridSettings.scorexSettings
     val minerSettings: HybridMiningSettings = hybridSettings.mining
 
@@ -138,7 +139,7 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
       0L))
 
 
-    log.debug(s"Initialize state with transaction ${genesisTxs.headOption} with boxes ${genesisTxs.headOption.map(_.newBoxes)}")
+    log.info(s"Initialize state with transaction ${genesisTxs.headOption} with boxes ${genesisTxs.headOption.map(_.newBoxes)}")
 
     val genesisBox = PublicKey25519NoncedBox(genesisAccountPriv.publicImage, Nonce @@ 0L, GenesisBalance)
     val attachment = "genesis attachment".getBytes
@@ -153,6 +154,7 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
       .ensuring(_.boxes().map(_.box.value.toLong).sum >= GenesisBalance ||
         !encoder.encode(hybridSettings.walletSettings.seed).startsWith("genesis"))
       .ensuring(_.boxes().forall(b => gs.closedBox(b.box.id).isDefined))
+    log.info("Exited GenesisState Function")
 
     (history, gs, gw, SimpleBoxTransactionPrismMemPool.emptyPool)
   }

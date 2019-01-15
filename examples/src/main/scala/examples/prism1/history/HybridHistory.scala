@@ -110,11 +110,11 @@ class HybridHistory(val storage: HistoryStorage,
 
           val mod: ProgressInfo[HybridBlock] = if (isBest) {
             if (isGenesis(powBlock) || (powBlock.parentId == bestPowId && powBlock.prevPosId == bestPosId)) {
-              log.debug(s"New best PoW block ${encoder.encodeId(powBlock.id)}")
+              log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)}")
               //just apply one block to the end
               ProgressInfo(None, Seq(), Seq(powBlock), Seq())
             } else if (isBestBrother) {
-              log.debug(s"New best brother ${encoder.encodeId(powBlock.id)}")
+              log.info(s"New best brother ${encoder.encodeId(powBlock.id)}")
               //new best brother
               ProgressInfo(Some(powBlock.prevPosId), Seq(bestPowBlock), Seq(powBlock), Seq())
             } else {
@@ -122,7 +122,7 @@ class HybridHistory(val storage: HistoryStorage,
               bestForkChanges(powBlock)
             }
           } else {
-            log.debug(s"New orphaned PoW block ${encoder.encodeId(powBlock.id)}")
+            log.info(s"New orphaned PoW block ${encoder.encodeId(powBlock.id)}")
             ProgressInfo(None, Seq(), Seq(), Seq())
           }
           storage.update(powBlock, None, isBest)
@@ -145,13 +145,13 @@ class HybridHistory(val storage: HistoryStorage,
     val isBest = storage.height == storage.parentHeight(posBlock)
 
     val mod: ProgressInfo[HybridBlock] = if (!isBest) {
-      log.debug(s"New orphaned PoS block ${encoder.encodeId(posBlock.id)}")
+      log.info(s"New orphaned PoS block ${encoder.encodeId(posBlock.id)}")
       ProgressInfo(None, Seq(), Seq(), Seq())
     } else if (posBlock.parentId == bestPowId) {
-      log.debug(s"New best PoS block ${encoder.encodeId(posBlock.id)}")
+      log.info(s"New best PoS block ${encoder.encodeId(posBlock.id)}")
       ProgressInfo(None, Seq(), Seq(posBlock), Seq())
     } else if (parent.prevPosId == bestPowBlock.prevPosId) {
-      log.debug(s"New best PoS block with link to non-best brother ${encoder.encodeId(posBlock.id)}")
+      log.info(s"New best PoS block with link to non-best brother ${encoder.encodeId(posBlock.id)}")
       //rollback to previous PoS block and apply parent block one more time
       ProgressInfo(Some(parent.prevPosId), Seq(bestPowBlock), Seq[HybridBlock](parent, posBlock), Seq())
     } else {
@@ -167,7 +167,7 @@ class HybridHistory(val storage: HistoryStorage,
     * @return
     */
   override def append(block: HybridBlock): Try[(HybridHistory, ProgressInfo[HybridBlock])] = Try {
-    log.debug(s"Trying to append block ${encoder.encodeId(block.id)} to history")
+    log.info(s"Trying to append block ${encoder.encodeId(block.id)} to history")
 
     validators.map(_.validate(block)).foreach {
       case Failure(e) =>
@@ -194,7 +194,7 @@ class HybridHistory(val storage: HistoryStorage,
   def bestForkChanges(block: HybridBlock): ProgressInfo[HybridBlock] = {
     val parentId = storage.parentId(block)
     val (newSuffix, oldSuffix) = commonBlockThenSuffixes(modifierById(parentId).get)
-    log.debug(s"Processing fork for block ${encoder.encodeId(block.id)}: \n" +
+    log.info(s"Processing fork for block ${encoder.encodeId(block.id)}: \n" +
       s"old: ${oldSuffix.map(encoder.encodeId)}\n" +
       s"new: ${newSuffix.map(encoder.encodeId)}")
 
@@ -459,7 +459,7 @@ class HybridHistory(val storage: HistoryStorage,
 
   /**
     * Average delay in milliseconds between last $blockNum blocks starting from $block
-    * Debug only
+    * info only
     */
   @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
   def averageDelay(id: ModifierId, blockNum: Int): Try[Long] = Try {

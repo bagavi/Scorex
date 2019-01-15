@@ -94,7 +94,6 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val difficulty = pmi.powDifficulty
         val bestPowBlock = pmi.bestPowBlock
 
-        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}:${encoder.encodeId(pmi.bestPosId)}")
         // V: In hybrid protocol the "next" PoW block was mined only when the current best PoWblock was paired to a PoS
         // block. Here we always try to mine the next PoW block
         val (parentId, prevPosId, brothers) = (bestPowBlock.id, pmi.bestPosId, Seq()) //new step
@@ -102,6 +101,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val pubkey = pmi.pubkey
 
         val p = Promise[Option[PowBlock]]()
+        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}:${encoder.encodeId(pmi.bestPosId)}")
         cancellableOpt = Some(Cancellable.run() { status =>
           Future {
             var foundBlock: Option[PowBlock] = None
@@ -110,10 +110,12 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
             while (status.nonCancelled && foundBlock.isEmpty) {
               foundBlock = powIteration(parentId, prevPosId, brothers, difficulty, settings, pubkey, settings.blockGenerationDelay)
               attemps = attemps + 1
-              if (attemps % 100 == 99) {
-                log.debug(s"100 hashes tried, difficulty is $difficulty")
+              if (attemps % 10 == 9) {
+                log.info(s"10 hashes tried, difficulty is $difficulty")
               }
             }
+            log.info("Found new block!")
+
             p.success(foundBlock)
           }
         })
@@ -125,7 +127,6 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
           }
         }
       }
-
 
     case b: PowBlock =>
       cancellableOpt.foreach(_.cancel())

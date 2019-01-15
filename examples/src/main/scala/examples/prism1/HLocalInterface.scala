@@ -29,28 +29,23 @@ class HLocalInterface(viewHolderRef: ActorRef,
     //stop PoW miner and start PoS forger if PoW block comes
     //stop PoW forger and start PoW miner if PoS block comes
     case sems: SemanticallySuccessfulModifier[_] =>
+      log.info("Success. Now at HLI")
       if (!block) {
         sems.modifier match {
           case wb: PowBlock =>
-            posForgerRef ! StartForging
             powMinerRef ! MineBlock
 
           case sb: PosBlock =>
-            if (!(sb.parentId == minerSettings.GenesisParentId)) {
-              posForgerRef ! StopForging
-              powMinerRef ! StartMining
-            }
+            log.info("This shouldn't have entered here!")
         }
       }
 
     case NoBetterNeighbour =>
       powMinerRef ! StartMining
-      posForgerRef ! StartForging
       block = false
 
     case BetterNeighbourAppeared =>
       powMinerRef ! StopMining
-      posForgerRef ! StopForging
       block = true
   }
 }
