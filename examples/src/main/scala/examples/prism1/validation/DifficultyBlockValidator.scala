@@ -1,8 +1,8 @@
 package examples.prism1.validation
 
-import examples.prism1.blocks.{HybridBlock, PosBlock, PowBlock}
+import examples.prism1.blocks.{HybridBlock, PowBlock}
 import examples.prism1.history.HistoryStorage
-import examples.prism1.mining.{HybridMiningSettings, PosForger}
+import examples.prism1.mining.{HybridMiningSettings}
 import scorex.core.block.BlockValidator
 import scorex.core.utils.ScorexEncoding
 
@@ -13,7 +13,6 @@ class DifficultyBlockValidator(settings: HybridMiningSettings, storage: HistoryS
 
   def validate(block: HybridBlock): Try[Unit] = block match {
     case b: PowBlock => checkPoWConsensusRules(b)
-    case b: PosBlock => checkPoSConsensusRules(b, settings)
   }
 
   //PoW consensus rules checks, work/references
@@ -27,19 +26,6 @@ class DifficultyBlockValidator(settings: HybridMiningSettings, storage: HistoryS
     //some brothers work
     require(powBlock.brothers.forall(_.correctWork(powDifficulty, settings)))
 
-  }
-
-  //PoS consensus rules checks, throws exception if anything wrong
-  private def checkPoSConsensusRules(posBlock: PosBlock, miningSettings: HybridMiningSettings): Try[Unit] = Try {
-    if (!storage.isGenesis(posBlock)) {
-      // TODO: review me - .get
-      @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-      val parentPoW: PowBlock = storage.modifierById(posBlock.parentId).get.asInstanceOf[PowBlock]
-      val hit = PosForger.hit(parentPoW)(posBlock.generatorBox)
-      val posDifficulty = storage.getPoSDifficulty(parentPoW.prevPosId)
-      val target = (miningSettings.MaxTarget / posDifficulty) * posBlock.generatorBox.value
-      require(hit < target, s"$hit < $target failed, $posDifficulty, ")
-    }
   }
 
 }
