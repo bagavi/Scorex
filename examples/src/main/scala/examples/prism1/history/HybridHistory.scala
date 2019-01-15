@@ -47,7 +47,7 @@ class HybridHistory(val storage: HistoryStorage,
   val bestPowId: ModifierId = storage.bestPowId
   lazy val bestPosBlock: PosBlock = storage.bestPosBlock
   lazy val bestPowBlock: PowBlock = storage.bestPowBlock
-  lazy val bestBlock: HybridBlock = if (pairCompleted) bestPosBlock else bestPowBlock
+  lazy val bestBlock: HybridBlock = bestPowBlock
 
   /**
     * Return specified number of PoW blocks, ordered back from last one
@@ -374,7 +374,7 @@ class HybridHistory(val storage: HistoryStorage,
 
   /**
     * Average delay in milliseconds between last $blockNum blocks starting from $block
-    * info only
+    * Debug only
     */
   @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
   def averageDelay(id: ModifierId, blockNum: Int): Try[Long] = Try {
