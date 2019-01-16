@@ -22,7 +22,7 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     with ScorexEncoding {
 
   override val route: Route = (pathPrefix("debug") & withCors) {
-    infoRoute ~ chain ~ delay ~ myblocks ~ generators
+    infoRoute ~ chain ~ delay ~ myblocks ~ generators ~ fullchain ~ briefchain
   }
 
   def delay: Route = {
@@ -91,6 +91,22 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
   def chain: Route = (get & path("chain")) {
     withNodeView { view =>
       ApiResponse("history" -> view.history.toString)
+    }
+  }
+
+  def fullchain: Route = (get & path("fullchain")) {
+    withNodeView { view =>
+      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
+        b => b.toString
+      }
+      ApiResponse((fc.indices zip fc).toMap)
+    }
+  }
+
+  def briefchain: Route = (get & path("briefchain")) {
+    withNodeView { view =>
+      val fc = view.history.toString.split(",").map{ s => s.substring(0,6)}
+      ApiResponse("history" -> fc.mkString(" <- "))
     }
   }
 }
