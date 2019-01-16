@@ -1,9 +1,9 @@
 package examples.prism1
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Cancellable, Props}
 import examples.commons._
 import examples.prism1.blocks._
-import examples.prism1.history.{HybridHistory, HistoryVisualizer, HybridSyncInfo}
+import examples.prism1.history.{HistoryVisualizer, HybridHistory, HybridSyncInfo}
 import examples.prism1.mining.{HybridMiningSettings, HybridSettings}
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
@@ -37,7 +37,7 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
   private lazy val minerSettings: HybridMiningSettings = hybridSettings.mining
 
   protected val visualizer: ActorRef = context.actorOf(HistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
-  protected val visualizeTimer = context.system.scheduler.schedule(5 second, 30 seconds, self, HistoryVisualizer.VisualizeClock)
+  protected val visualizeTimer: Cancellable = context.system.scheduler.schedule(5 seconds, 30 seconds, self, HistoryVisualizer.VisualizeClock)
 
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
@@ -170,14 +170,13 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
     val genesisBox = PublicKey25519NoncedBox(genesisAccountPriv.publicImage, Nonce @@ 0L, GenesisBalance)
     val attachment = "genesis attachment".getBytes
-    val posGenesis = PosBlock.create(powGenesis.id, 0, genesisTxs, genesisBox, attachment, genesisAccountPriv)
+//    val posGenesis = PosBlock.create(powGenesis.id, 0, genesisTxs, genesisBox, attachment, genesisAccountPriv)
 
     var history = HybridHistory.readOrGenerate(settings, minerSettings, timeProvider)
     history = history.append(powGenesis).get._1
-    history = history.append(posGenesis).get._1
 
-    val gs = HBoxStoredState.genesisState(settings, Seq[HybridBlock](posGenesis, powGenesis))
-    val gw = HBoxWallet.genesisWallet(hybridSettings.walletSettings, Seq[HybridBlock](posGenesis, powGenesis))
+    val gs = HBoxStoredState.genesisState(settings, Seq[HybridBlock](powGenesis))
+    val gw = HBoxWallet.genesisWallet(hybridSettings.walletSettings, Seq[HybridBlock](powGenesis))
       .ensuring(_.boxes().map(_.box.value.toLong).sum >= GenesisBalance ||
         !encoder.encode(hybridSettings.walletSettings.seed).startsWith("genesis"))
       .ensuring(_.boxes().forall(b => gs.closedBox(b.box.id).isDefined))

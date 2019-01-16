@@ -4,7 +4,7 @@ import java.io.File
 
 import com.google.common.primitives.Longs
 import examples.commons._
-import examples.prism1.blocks.{HybridBlock, PosBlock, PowBlock}
+import examples.prism1.blocks.{HybridBlock, PowBlock}
 import io.iohk.iodb.{ByteArrayWrapper, LSMStore}
 import scorex.core._
 import scorex.core.settings.ScorexSettings
@@ -52,17 +52,11 @@ case class HBoxStoredState(store: LSMStore, override val version: VersionTag) ex
     mod match {
       case pwb: PowBlock =>
         //coinbase transaction is generated implicitly when block is applied to state, no validation needed
-        require((pwb.parentId == version) || (pwb.prevPosId == version)
+        require((pwb.parentId == version)
           || pwb.brothers.exists(_.id == version), s"Incorrect state version: ${encoder.encodeVersion(version)} " +
           s"found, (${encoder.encodeId(pwb.prevPosId)} || ${encoder.encodeId(pwb.parentId)} ||" +
           s" ${pwb.brothers.map(b => encoder.encodeId(b.id))}) expected")
 
-      case psb: PosBlock =>
-        require(psb.parentId == version, s"Incorrect state version!: ${encoder.encodeId(psb.parentId)} found, " +
-          s"${encoder.encodeVersion(version)} expected")
-        //TODO/review this: if the get below is removed, some of hybrid.HybridSanity and hybrid.NodeViewHolderSpec tests fail
-        closedBox(psb.generatorBox.id).get
-        psb.transactions.foreach(tx => validate(tx).get)
     }
   }.recoverWith{case t =>
     log.warn(s"Not valid modifier ${mod.encodedId}", t)
@@ -113,26 +107,6 @@ object HBoxStoredState {
         val value: Value = Value @@ 1L
         val minerBox = PublicKey25519NoncedBox(proposition, nonce, value)
         Success(BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox](Seq(Insertion(minerBox))))
-      case ps: PosBlock =>
-        Try {
-          val initial = (Seq(): Seq[Array[Byte]], Seq(): Seq[PublicKey25519NoncedBox], 0L)
-
-          val (toRemove: Seq[ADKey@unchecked], toAdd: Seq[PublicKey25519NoncedBox], reward) =
-            ps.transactions.foldLeft(initial) { case ((sr, sa, f), tx) =>
-              ((sr ++ tx.boxIdsToOpen.toSet).map(id => ADKey @@ id), sa ++ tx.newBoxes.toSet, f + tx.fee)
-            }
-
-          //for PoS forger reward box, we use block Id as a nonce
-          val forgerNonce = Nonce @@ Longs.fromByteArray(idToBytes(ps.id).take(8))
-          val forgerBox = PublicKey25519NoncedBox(ps.generatorBox.proposition, forgerNonce, Value @@ reward)
-
-          @SuppressWarnings(Array("org.wartremover.warts.Product","org.wartremover.warts.Serializable"))
-          val ops: Seq[BoxStateChangeOperation[PublicKey25519Proposition, PublicKey25519NoncedBox]] =
-            toRemove.map(id => Removal[PublicKey25519Proposition, PublicKey25519NoncedBox](id)) ++
-              toAdd.map(b => Insertion[PublicKey25519Proposition, PublicKey25519NoncedBox](b)) ++
-              Seq(Insertion[PublicKey25519Proposition, PublicKey25519NoncedBox](forgerBox))
-          BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox](ops)
-        }
     }
   }
 

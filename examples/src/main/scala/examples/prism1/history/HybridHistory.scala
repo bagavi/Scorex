@@ -4,7 +4,7 @@ package examples.prism1.history
 import java.io.File
 
 import examples.commons.{FileLogger, SimpleBoxTransactionPrism}
-import examples.prism1.blocks._
+import examples.prism1.blocks.{HybridBlock, PowBlock}
 import examples.prism1.mining.HybridMiningSettings
 import examples.prism1.validation.{DifficultyBlockValidator, ParentBlockValidator, SemanticBlockValidator}
 import io.iohk.iodb.LSMStore
@@ -16,7 +16,7 @@ import scorex.core.settings.ScorexSettings
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.utils.{NetworkTimeProvider, ScorexEncoding}
 import scorex.core.validation.RecoverableModifierError
-import scorex.core.{ModifierTypeId, NodeViewModifier}
+import scorex.core.{ModifierTypeId, NodeViewModifier, bytesToId}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.{ModifierId, ScorexLogging}
 
@@ -43,9 +43,12 @@ class HybridHistory(val storage: HistoryStorage,
   lazy val pairCompleted: Boolean = true
 
   val height: Long = storage.height
-  val bestPosId: ModifierId = storage.bestPosId
+  /**
+    * since we don't have best pos, we just set it to a constant
+    * this constant should be same as HybridMiningSettings.GenesisParentId
+    */
+  val bestPosId: ModifierId = bytesToId(Array.fill(32)(1: Byte))
   val bestPowId: ModifierId = storage.bestPowId
-  lazy val bestPosBlock: PosBlock = storage.bestPosBlock
   lazy val bestPowBlock: PowBlock = storage.bestPowBlock
   lazy val bestBlock: HybridBlock = bestPowBlock
 
@@ -219,8 +222,7 @@ class HybridHistory(val storage: HistoryStorage,
   override def syncInfo: HybridSyncInfo =
     HybridSyncInfo(
       answer = false,
-      lastPowBlocks(HybridSyncInfo.MaxLastPowBlocks, bestPowBlock).map(_.id),
-      bestPosId)
+      lastPowBlocks(HybridSyncInfo.MaxLastPowBlocks, bestPowBlock).map(_.id))
 
   @tailrec
   private def divergentSuffix(otherLastPowBlocks: Seq[ModifierId],
@@ -275,12 +277,12 @@ class HybridHistory(val storage: HistoryStorage,
     }
   }
 
-  lazy val powDifficulty = storage.getPoWDifficulty(None)
+  lazy val powDifficulty: BigInt = storage.getPoWDifficulty(None)
 
   private def isGenesis(b: HybridBlock): Boolean = storage.isGenesis(b)
 
   def blockGenerator(m: HybridBlock): PublicKey25519Proposition = m match {
-    case p: PosBlock => p.generatorBox.proposition
+    case p: PowBlock => p.generatorProposition
   }
 
   def generatorDistribution(): Map[PublicKey25519Proposition, Int] = {
@@ -300,9 +302,9 @@ class HybridHistory(val storage: HistoryStorage,
     map.toMap
   }
 
-  def count(f: (HybridBlock => Boolean)): Int = filter(f).length
+  def count(f: HybridBlock => Boolean): Int = filter(f).length
 
-  def filter(f: (HybridBlock => Boolean)): Seq[ModifierId] = {
+  def filter(f: HybridBlock => Boolean): Seq[ModifierId] = {
     @tailrec
     def loop(m: HybridBlock, acc: Seq[ModifierId]): Seq[ModifierId] = parentBlock(m) match {
       case Some(parent) => if (f(m)) loop(parent, m.id +: acc) else loop(parent, acc)
@@ -313,8 +315,7 @@ class HybridHistory(val storage: HistoryStorage,
   }
 
   def parentBlock(m: HybridBlock): Option[HybridBlock] = m match {
-    case b: PosBlock => modifierById(b.parentId)
-    case b: PowBlock => modifierById(b.prevPosId)
+    case b: PowBlock => modifierById(b.parentId)
   }
 
   /**
@@ -327,8 +328,7 @@ class HybridHistory(val storage: HistoryStorage,
                         limit: Int = Int.MaxValue,
                         acc: Seq[(ModifierTypeId, ModifierId)] = Seq()): Option[Seq[(ModifierTypeId, ModifierId)]] = {
     @SuppressWarnings(Array("org.wartremover.warts.IsInstanceOf"))
-    val sum: Seq[(ModifierTypeId, ModifierId)] = if (m.isInstanceOf[PosBlock]) (PosBlock.ModifierTypeId -> m.id) +: acc
-    else (PowBlock.ModifierTypeId -> m.id) +: acc
+    val sum: Seq[(ModifierTypeId, ModifierId)] = (PowBlock.ModifierTypeId -> m.id) +: acc
 
     if (limit <= 0 || until(m)) {
       Some(sum)

@@ -17,7 +17,6 @@ import scala.util.Try
   */
 case class HybridSyncInfo(answer: Boolean,
                           lastPowBlockIds: Seq[ModifierId],
-                          lastPosBlockId: ModifierId
                          ) extends SyncInfo {
 
   import HybridSyncInfo.MaxLastPowBlocks
@@ -25,7 +24,7 @@ case class HybridSyncInfo(answer: Boolean,
   require(lastPowBlockIds.size <= MaxLastPowBlocks)
 
   override def startingPoints: Seq[(ModifierTypeId, ModifierId)] =
-    Seq(lastPowBlockIds.map(b => PowBlock.ModifierTypeId -> b) ++ Seq(PosBlock.ModifierTypeId -> lastPosBlockId)).flatten
+    Seq(lastPowBlockIds.map(b => PowBlock.ModifierTypeId -> b)).flatten
 
 
   override type M = HybridSyncInfo
@@ -45,21 +44,19 @@ object HybridSyncInfoSerializer extends Serializer[HybridSyncInfo] {
     Array(
       if (obj.answer) 1: Byte else 0: Byte,
       obj.lastPowBlockIds.size.toByte
-    ) ++ obj.lastPowBlockIds.foldLeft(Array[Byte]())((a, b) => a ++ idToBytes(b)) ++ idToBytes(obj.lastPosBlockId)
+    ) ++ obj.lastPowBlockIds.foldLeft(Array[Byte]())((a, b) => a ++ idToBytes(b))
 
   override def parseBytes(bytes: Array[Byte]): Try[HybridSyncInfo] = Try {
     val answer: Boolean = if (bytes.head == 1.toByte) true else false
     val lastPowBlockIdsSize = bytes.slice(1, 2).head
 
     require(lastPowBlockIdsSize >= 0 && lastPowBlockIdsSize <= MaxLastPowBlocks)
-    require(bytes.length == 2 + (lastPowBlockIdsSize + 1) * NodeViewModifier.ModifierIdSize)
+    require(bytes.length == 2 + (lastPowBlockIdsSize + 0) * NodeViewModifier.ModifierIdSize)
 
     val lastPowBlockIds = bytes.slice(2, 2 + NodeViewModifier.ModifierIdSize * lastPowBlockIdsSize)
       .grouped(NodeViewModifier.ModifierIdSize).toSeq.map(id => bytesToId(id))
 
-    val lastPosBlockId = bytesToId(bytes.slice(2 + NodeViewModifier.ModifierIdSize * lastPowBlockIdsSize, bytes.length))
-
-    HybridSyncInfo(answer, lastPowBlockIds, lastPosBlockId)
+    HybridSyncInfo(answer, lastPowBlockIds)
   }
 }
 

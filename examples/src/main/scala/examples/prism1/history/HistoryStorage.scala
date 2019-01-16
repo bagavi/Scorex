@@ -3,7 +3,7 @@ package examples.prism1.history
 import com.google.common.primitives.Longs
 import examples.commons.idToBAW
 import examples.prism1.blocks._
-import examples.prism1.mining.{HybridMiningSettings}
+import examples.prism1.mining.HybridMiningSettings
 import io.iohk.iodb.{ByteArrayWrapper, LSMStore}
 import scorex.core.consensus.ModifierSemanticValidity
 import scorex.core.consensus.ModifierSemanticValidity.{Absent, Unknown}
@@ -17,16 +17,12 @@ class HistoryStorage(storage: LSMStore,
                      settings: HybridMiningSettings) extends ScorexLogging {
 
   private val bestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
-  private val bestPosIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-2: Byte))
 
   def height: Long = heightOf(bestPowId).getOrElse(0L)
 
   def bestChainScore: Long = height
 
   def bestPowId: ModifierId = storage.get(bestPowIdKey).map(d => bytesToId(d.data))
-    .getOrElse(settings.GenesisParentId)
-
-  def bestPosId: ModifierId = storage.get(bestPosIdKey).map(d => bytesToId(d.data))
     .getOrElse(settings.GenesisParentId)
 
   // TODO: review me .get
@@ -36,13 +32,6 @@ class HistoryStorage(storage: LSMStore,
     modifierById(bestPowId).get.asInstanceOf[PowBlock]
   }
 
-  // TODO: review me .get
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-  def bestPosBlock: PosBlock = {
-    require(height > 0, "History is empty")
-    modifierById(bestPosId).get.asInstanceOf[PosBlock]
-  }
-
   def modifierById(blockId: ModifierId): Option[HybridBlock] = {
     storage.get(ByteArrayWrapper(idToBytes(blockId))).flatMap { bw =>
       val bytes = bw.data
@@ -50,8 +39,6 @@ class HistoryStorage(storage: LSMStore,
       val parsed: Try[HybridBlock] = mtypeId match {
         case t: Byte if t == PowBlock.ModifierTypeId =>
           PowBlockCompanion.parseBytes(bytes.tail)
-        case t: Byte if t == PosBlock.ModifierTypeId =>
-          PosBlockCompanion.parseBytes(bytes.tail)
       }
       parsed match {
         case Failure(e) => log.warn("Failed to parse bytes from bd", e)
@@ -82,23 +69,20 @@ class HistoryStorage(storage: LSMStore,
     val typeByte = b match {
       case _: PowBlock =>
         PowBlock.ModifierTypeId
-      case _: PosBlock =>
-        PosBlock.ModifierTypeId
     }
 
     val blockH: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] =
       Seq(blockHeightKey(b.id) -> ByteArrayWrapper(Longs.toByteArray(parentHeight(b) + 1)))
 
-    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
-      Seq(blockDiffKey(b.id, isPos = false) -> ByteArrayWrapper(d._1.toByteArray),
-        blockDiffKey(b.id, isPos = true) -> ByteArrayWrapper(d._2.toByteArray))
-    }.getOrElse(Seq())
+    // TODO: not sure about this, let's first use simple difficulty
+//    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
+//      Seq(blockDiffKey(b.id) -> ByteArrayWrapper(d._1.toByteArray))
+//    }.getOrElse(Seq())
+    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = Seq()
 
     val bestBlockSeq: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = b match {
       case powBlock: PowBlock if isBest =>
-        Seq(bestPowIdKey -> idToBAW(powBlock.id), bestPosIdKey -> idToBAW(powBlock.prevPosId))
-      case posBlock: PosBlock if isBest =>
-        Seq(bestPowIdKey -> idToBAW(posBlock.parentId), bestPosIdKey -> idToBAW(posBlock.id))
+        Seq(bestPowIdKey -> idToBAW(powBlock.id))
       case _ => Seq()
     }
 
@@ -114,16 +98,18 @@ class HistoryStorage(storage: LSMStore,
   // TODO: review me .get
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getPoWDifficulty(idOpt: Option[ModifierId]): BigInt = {
-    idOpt match {
-      case Some(id) if id == settings.GenesisParentId =>
-        settings.initialDifficulty
-      case Some(id) =>
-        BigInt(storage.get(blockDiffKey(id, isPos = false)).get.data)
-      case None if height > 0 =>
-        BigInt(storage.get(blockDiffKey(bestPosId, isPos = false)).get.data)
-      case _ =>
-        settings.initialDifficulty
-    }
+    //TODO: let's first use simple difficulty
+//    idOpt match {
+//      case Some(id) if id == settings.GenesisParentId =>
+//        settings.initialDifficulty
+//      case Some(id) =>
+//        BigInt(storage.get(blockDiffKey(id)).get.data)
+//      case None if height > 0 =>
+//        settings.initialDifficulty
+//      case _ =>
+//        settings.initialDifficulty
+//    }
+    settings.initialDifficulty
   }
 
 
@@ -139,14 +125,14 @@ class HistoryStorage(storage: LSMStore,
   private def blockHeightKey(blockId: ModifierId): ByteArrayWrapper =
     ByteArrayWrapper(Sha256(s"height$blockId"))
 
-  private def blockDiffKey(blockId: ModifierId, isPos: Boolean): ByteArrayWrapper =
-    ByteArrayWrapper(Sha256(s"difficulties$isPos$blockId"))
+  private def blockDiffKey(blockId: ModifierId): ByteArrayWrapper = {
+    ByteArrayWrapper(Sha256(s"difficulties$blockId"))
+  }
 
   def heightOf(blockId: ModifierId): Option[Long] = storage.get(blockHeightKey(blockId))
     .map(b => Longs.fromByteArray(b.data))
 
   def isGenesis(b: HybridBlock): Boolean = b match {
     case powB: PowBlock => powB.parentId == settings.GenesisParentId
-    case posB: PosBlock => heightOf(posB.parentId).contains(1L)
   }
 }
