@@ -89,6 +89,7 @@ class HistoryStorage(storage: LSMStore,
     val blockH: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] =
       Seq(blockHeightKey(b.id) -> ByteArrayWrapper(Longs.toByteArray(parentHeight(b) + 1)))
 
+
     val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
       Seq(blockDiffKey(b.id, isPos = false) -> ByteArrayWrapper(d._1.toByteArray),
         blockDiffKey(b.id, isPos = true) -> ByteArrayWrapper(d._2.toByteArray))

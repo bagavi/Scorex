@@ -17,12 +17,15 @@ class HistoryStorage(storage: LSMStore,
                      settings: HybridMiningSettings) extends ScorexLogging {
 
   private val bestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
+  private val SecondbestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
 
   def height: Long = heightOf(bestPowId).getOrElse(0L)
 
   def bestChainScore: Long = height
 
   def bestPowId: ModifierId = storage.get(bestPowIdKey).map(d => bytesToId(d.data))
+    .getOrElse(settings.GenesisParentId)
+  def secondbestPowId: ModifierId = storage.get(SecondbestPowIdKey).map(d => bytesToId(d.data))
     .getOrElse(settings.GenesisParentId)
 
   // TODO: review me .get
@@ -74,11 +77,12 @@ class HistoryStorage(storage: LSMStore,
     val blockH: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] =
       Seq(blockHeightKey(b.id) -> ByteArrayWrapper(Longs.toByteArray(parentHeight(b) + 1)))
 
-    // TODO: not sure about this, let's first use simple difficulty
-//    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
-//      Seq(blockDiffKey(b.id) -> ByteArrayWrapper(d._1.toByteArray))
-//    }.getOrElse(Seq())
-    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = Seq()
+    // Returns a key value pair which maps from blockid to the blocks difficulty
+    val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
+      Seq(blockDiffKey(b.id) -> ByteArrayWrapper(d.toByteArray))
+    }.getOrElse(Seq())
+
+//    log.info(s"Heya! ${blockDiff(2)}")
 
     val bestBlockSeq: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = b match {
       case powBlock: PowBlock if isBest =>
@@ -99,6 +103,13 @@ class HistoryStorage(storage: LSMStore,
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getPoWDifficulty(idOpt: Option[ModifierId]): BigInt = {
     idOpt match {
+      case Some(id) if id == settings.GenesisParentId =>
+        settings.initialDifficulty
+      case Some(id) =>
+        BigInt(storage.get(blockDiffKey(id)).get.data)
+//      case None if height > 0 =>
+////        log.info(s"Came here!!! best PoWId = ${bestPowId}")
+//        BigInt(storage.get(blockDiffKey(bestPowId)).get.data)
       case _ =>
         settings.initialDifficulty
     }

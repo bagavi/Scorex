@@ -119,6 +119,7 @@ class HybridHistory(val storage: HistoryStorage,
           }
           // Vivek: Activiate below once "getPoWDifficulty" is correct.
           val difficulties = 1 // calcDifficultiesForNewBlock(powBlock)
+          log.info("Updating difficulty")
           storage.update(powBlock, Some(difficulties), isBest)
           mod
 

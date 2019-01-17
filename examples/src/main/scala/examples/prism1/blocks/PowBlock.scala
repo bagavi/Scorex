@@ -48,7 +48,8 @@ class PowBlockHeader(
 }
 
 object PowBlockHeader {
-  //two pointers and 2 long values, 64 bit each
+  //two pointers and 2 long values, 64 bit each,
+  // one int, one blakehash and a pubkey
   val PowHeaderSize = NodeViewModifier.ModifierIdSize * 2 + 8 * 2 + 4 + Blake2b256.DigestSize + Curve25519.KeyLength
 
   def parse(bytes: Array[Byte]): Try[PowBlockHeader] = Try {
@@ -102,6 +103,7 @@ case class PowBlock(override val parentId: BlockId,
 
 object PowBlockCompanion extends Serializer[PowBlock] {
 
+  //
   def brotherBytes(brothers: Seq[PowBlockHeader]): Array[Byte] = brothers.foldLeft(Array[Byte]()) { case (ba, b) =>
     ba ++ b.headerBytes
   }
@@ -110,7 +112,11 @@ object PowBlockCompanion extends Serializer[PowBlock] {
     modifier.headerBytes ++ modifier.brotherBytes ++ modifier.generatorProposition.bytes
 
   override def parseBytes(bytes: Array[Byte]): Try[PowBlock] = {
+
     val headerBytes = bytes.slice(0, PowBlockHeader.PowHeaderSize)
+    /*
+      Loop through the PoWBlock header to extract brother block hashes
+     */
     PowBlockHeader.parse(headerBytes).flatMap { header =>
       Try {
         val (bs, posit) = (0 until header.brothersCount).foldLeft((Seq[PowBlockHeader](), PowBlockHeader.PowHeaderSize)) {
