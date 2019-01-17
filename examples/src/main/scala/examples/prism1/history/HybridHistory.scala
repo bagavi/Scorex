@@ -94,7 +94,7 @@ class HybridHistory(val storage: HistoryStorage,
 
   private def powBlockAppend(powBlock: PowBlock): (HybridHistory, ProgressInfo[HybridBlock]) = {
     val progress: ProgressInfo[HybridBlock] = if (isGenesis(powBlock)) {
-      storage.update(powBlock, None, isBest = true)
+      storage.update(powBlock, Some(settings.initialDifficulty), isBest = true)
       ProgressInfo(None, Seq(), Seq(powBlock), Seq())
     } else {
       storage.heightOf(powBlock.parentId) match {

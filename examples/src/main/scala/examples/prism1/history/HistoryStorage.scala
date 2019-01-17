@@ -17,15 +17,12 @@ class HistoryStorage(storage: LSMStore,
                      settings: HybridMiningSettings) extends ScorexLogging {
 
   private val bestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
-  private val SecondbestPowIdKey = ByteArrayWrapper(Array.fill(storage.keySize)(-1: Byte))
 
   def height: Long = heightOf(bestPowId).getOrElse(0L)
 
   def bestChainScore: Long = height
 
   def bestPowId: ModifierId = storage.get(bestPowIdKey).map(d => bytesToId(d.data))
-    .getOrElse(settings.GenesisParentId)
-  def secondbestPowId: ModifierId = storage.get(SecondbestPowIdKey).map(d => bytesToId(d.data))
     .getOrElse(settings.GenesisParentId)
 
   // TODO: review me .get
@@ -82,8 +79,6 @@ class HistoryStorage(storage: LSMStore,
       Seq(blockDiffKey(b.id) -> ByteArrayWrapper(d.toByteArray))
     }.getOrElse(Seq())
 
-//    log.info(s"Heya! ${blockDiff(2)}")
-
     val bestBlockSeq: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = b match {
       case powBlock: PowBlock if isBest =>
         Seq(bestPowIdKey -> idToBAW(powBlock.id))
@@ -107,9 +102,9 @@ class HistoryStorage(storage: LSMStore,
         settings.initialDifficulty
       case Some(id) =>
         BigInt(storage.get(blockDiffKey(id)).get.data)
-//      case None if height > 0 =>
-////        log.info(s"Came here!!! best PoWId = ${bestPowId}")
-//        BigInt(storage.get(blockDiffKey(bestPowId)).get.data)
+      case None if height > 0 =>
+        log.info(s"Came here!!")
+        BigInt(storage.get(blockDiffKey(bestPowId)).get.data)
       case _ =>
         settings.initialDifficulty
     }
