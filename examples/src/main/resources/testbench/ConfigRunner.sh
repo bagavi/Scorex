@@ -14,7 +14,7 @@ while read -r line || [[ -n "$line" ]]; do
 		mkdir -p "/tmp/scorex/data${array[0]}/log"
 		nohup sbt "; project examples; runMain examples.prism1.PrismV1App src/main/resources/testbench/settings${array[0]}.conf" > /tmp/scorex/data${array[0]}/log/stdout.data 2>&1 &
 		echo "start ${array[0]}"
-		sleep 3
+		sleep 1
     fi
 done < "$my_dir/$1"
 
