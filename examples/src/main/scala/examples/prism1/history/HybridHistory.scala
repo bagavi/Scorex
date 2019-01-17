@@ -117,7 +117,9 @@ class HybridHistory(val storage: HistoryStorage,
             log.info(s"New orphaned PoW block ${encoder.encodeId(powBlock.id)}")
             ProgressInfo(None, Seq(), Seq(), Seq())
           }
-          storage.update(powBlock, None, isBest)
+          // Vivek: Activiate below once "getPoWDifficulty" is correct.
+          val difficulties = 1 // calcDifficultiesForNewBlock(powBlock)
+          storage.update(powBlock, Some(difficulties), isBest)
           mod
 
         case None =>
@@ -155,6 +157,43 @@ class HybridHistory(val storage: HistoryStorage,
       lastBlockIds(bestBlock, 50).map(encoder.encodeId).mkString(",")))
     res
   }
+
+  private def calcDifficultiesForNewBlock(powBlock: PowBlock): BigInt = {
+    def bounded(newVal: BigInt, oldVal: BigInt): BigInt = if (newVal > oldVal * 2) oldVal * 2 else newVal
+
+    val powHeight = storage.parentHeight(PowBlock)  + 1
+    if (powHeight > DifficultyRecalcPeriod && powHeight % DifficultyRecalcPeriod == 0) {
+
+      //recalc difficulties
+
+      // TODO: review me .get and asInstanceOf
+      @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
+      val lastPow = powBlock
+      val powBlocks = lastPowBlocks(DifficultyRecalcPeriod, lastPow) //.ensuring(_.length == DifficultyRecalcPeriod)
+
+      // TODO: fixme, What should we do if `powBlocksHead` is empty?
+      @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
+      val powBlocksHead = powBlocks.head
+      val realTime = lastPow.timestamp - powBlocksHead.timestamp
+      val expectedTime = DifficultyRecalcPeriod * settings.targetBlockDelay.toMillis
+      val oldPowDifficulty = storage.getPoWDifficulty(Some(lastPow.parentId)) // Vivek: To change the storage.getPoWDifficulty
+
+      val newPowDiffUnlimited = (oldPowDifficulty * expectedTime / realTime).max(BigInt(1L))
+      val newPowDiff = bounded(newPowDiffUnlimited, oldPowDifficulty)
+
+      log.info(s"PoW difficulty changed at ${encoder.encodeId(powBlock.id)}: old $oldPowDifficulty, new $newPowDiff. " +
+        s" last: $lastPow, head: $powBlocksHead ")
+      newPowDiff
+    } else {
+      //Same difficulty as in previous block
+      assert(modifierById(powBlock.parentId).isDefined, "Parent should always be in history")
+      // TODO: review me .get and asInstanceOf
+      @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
+      val parentPoWId: ModifierId = modifierById(powBlock.parentId).get.asInstanceOf[PowBlock].parentId
+      storage.getPoWDifficulty(Some(parentPoWId))
+    }
+  }
+
 
   // TODO: review me .get
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
