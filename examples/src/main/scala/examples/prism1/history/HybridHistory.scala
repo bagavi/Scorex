@@ -161,7 +161,7 @@ class HybridHistory(val storage: HistoryStorage,
   private def calcDifficultiesForNewBlock(powBlock: PowBlock): BigInt = {
     def bounded(newVal: BigInt, oldVal: BigInt): BigInt = if (newVal > oldVal * 2) oldVal * 2 else newVal
 
-    val powHeight = storage.parentHeight(PowBlock)  + 1
+    val powHeight = storage.parentHeight(powBlock)  + 1
     if (powHeight > DifficultyRecalcPeriod && powHeight % DifficultyRecalcPeriod == 0) {
 
       //recalc difficulties

@@ -98,18 +98,10 @@ class HistoryStorage(storage: LSMStore,
   // TODO: review me .get
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getPoWDifficulty(idOpt: Option[ModifierId]): BigInt = {
-    //TODO: let's first use simple difficulty
-//    idOpt match {
-//      case Some(id) if id == settings.GenesisParentId =>
-//        settings.initialDifficulty
-//      case Some(id) =>
-//        BigInt(storage.get(blockDiffKey(id)).get.data)
-//      case None if height > 0 =>
-//        settings.initialDifficulty
-//      case _ =>
-//        settings.initialDifficulty
-//    }
-    settings.initialDifficulty
+    idOpt match {
+      case _ =>
+        settings.initialDifficulty
+    }
   }
 
 
