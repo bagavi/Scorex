@@ -123,6 +123,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         p.future.onComplete { toBlock =>
           toBlock.getOrElse(None).foreach { block =>
             log.debug(s"Locally generated PoW block: $block with difficulty $difficulty")
+            Thread.sleep(settings.blockNetworkTransmissionDelay.toMillis)
             self ! block
           }
         }
