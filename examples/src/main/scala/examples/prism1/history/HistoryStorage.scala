@@ -103,7 +103,6 @@ class HistoryStorage(storage: LSMStore,
       case Some(id) =>
         BigInt(storage.get(blockDiffKey(id)).get.data)
       case None if height > 0 =>
-        log.info(s"Came here!!")
         BigInt(storage.get(blockDiffKey(bestPowId)).get.data)
       case _ =>
         settings.initialDifficulty
