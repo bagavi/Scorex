@@ -140,4 +140,19 @@ class HistoryStorage(storage: LSMStore,
   def isGenesis(b: HybridBlock): Boolean = b match {
     case powB: PowBlock => powB.parentId == settings.GenesisParentId
   }
+
+  def getAllBlocks: Seq[HybridBlock] = {
+    storage.getAll().flatMap { kv =>
+      val bw = kv._2
+      val bytes = bw.data
+      val mtypeId = bytes.head
+//      val isBlock = mtypeId == PowBlock.ModifierTypeId
+      val parsed: Option[HybridBlock] = mtypeId match {
+        case t: Byte if t == PowBlock.ModifierTypeId =>
+          PowBlockCompanion.parseBytes(bytes.tail).toOption
+        case _ => None
+      }
+      parsed
+    }.toSeq
+  }
 }
