@@ -155,8 +155,8 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
     val genesisAccount = PrivateKey25519Companion.generateKeys("genesis".getBytes)
     val genesisAccountPriv = genesisAccount._1
-    val powGenesis = PowBlock(minerSettings.GenesisParentId, minerSettings.GenesisParentId, 1481110008516L, 38,
-      0, Array.fill(32)(0: Byte), genesisAccount._2, Seq())
+    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 4, genesisAccount._2)
+
 
 
     val genesisTxs = Seq(SimpleBoxTransactionPrism(

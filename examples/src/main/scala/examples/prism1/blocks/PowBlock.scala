@@ -19,11 +19,8 @@ import scala.util.Try
 
 class PowBlockHeader(
                       val parentId: BlockId,
-                      val prevPosId: BlockId,
                       val timestamp: Block.Timestamp,
                       val nonce: Long,
-                      val brothersCount: Int,
-                      val brothersHash: Array[Byte],
                       val generatorProposition: PublicKey25519Proposition) extends ScorexEncoding {
 
 
@@ -31,11 +28,8 @@ class PowBlockHeader(
 
   lazy val headerBytes: Array[Byte] =
     idToBytes(parentId) ++
-      idToBytes(prevPosId) ++
       Longs.toByteArray(timestamp) ++
       Longs.toByteArray(nonce) ++
-      Ints.toByteArray(brothersCount) ++
-      brothersHash ++
       generatorProposition.pubKeyBytes
 
   def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = correctWorkDone(id, difficulty, s)
@@ -43,26 +37,21 @@ class PowBlockHeader(
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
 
   override lazy val toString: String = s"PowBlockHeader(id: ${encoder.encodeId(id)})" +
-    s"(parentId: ${encoder.encodeId(parentId)}, posParentId: ${encoder.encodeId(prevPosId)}, time: $timestamp, " +
-    s"nonce: $nonce)"
+    s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, " + s"nonce: $nonce)"
 }
 
 object PowBlockHeader {
-  //two pointers and 2 long values, 64 bit each,
-  // one int, one blakehash and a pubkey
-  val PowHeaderSize = NodeViewModifier.ModifierIdSize * 2 + 8 * 2 + 4 + Blake2b256.DigestSize + Curve25519.KeyLength
+  //one 64 bit pointer, 2 long values and a pubkey.
+  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength
 
   def parse(bytes: Array[Byte]): Try[PowBlockHeader] = Try {
     require(bytes.length == PowHeaderSize)
     val parentId = bytesToId(bytes.slice(0, 32))
-    val prevPosId = bytesToId(bytes.slice(32, 64))
-    val timestamp = Longs.fromByteArray(bytes.slice(64, 72))
-    val nonce = Longs.fromByteArray(bytes.slice(72, 80))
-    val brothersCount = Ints.fromByteArray(bytes.slice(80, 84))
-    val brothersHash = bytes.slice(84, 116)
-    val prop = PublicKey25519Proposition(PublicKey @@ bytes.slice(116, 148))
+    val timestamp = Longs.fromByteArray(bytes.slice(32, 40))
+    val nonce = Longs.fromByteArray(bytes.slice(40, 48))
+    val prop = PublicKey25519Proposition(PublicKey @@ bytes.slice(48, 80))
 
-    new PowBlockHeader(parentId, prevPosId, timestamp, nonce, brothersCount, brothersHash, prop)
+    new PowBlockHeader(parentId, timestamp, nonce, prop)
   }
 
   def correctWorkDone(id: ModifierId, difficulty: BigInt, s: HybridMiningSettings): Boolean = {
@@ -72,14 +61,10 @@ object PowBlockHeader {
 }
 
 case class PowBlock(override val parentId: BlockId,
-                    override val prevPosId: BlockId,
                     override val timestamp: Block.Timestamp,
                     override val nonce: Long,
-                    override val brothersCount: Int,
-                    override val brothersHash: Array[Byte],
-                    override val generatorProposition: PublicKey25519Proposition,
-                    brothers: Seq[PowBlockHeader])
-  extends PowBlockHeader(parentId, prevPosId, timestamp, nonce, brothersCount, brothersHash, generatorProposition)
+                    override val generatorProposition: PublicKey25519Proposition)
+  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition)
     with HybridBlock {
 
   override type M = PowBlock
@@ -91,9 +76,8 @@ case class PowBlock(override val parentId: BlockId,
   override lazy val modifierTypeId: ModifierTypeId = PowBlock.ModifierTypeId
 
 
-  lazy val header = new PowBlockHeader(parentId, prevPosId, timestamp, nonce, brothersCount, brothersHash, generatorProposition)
+  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition)
 
-  lazy val brotherBytes = serializer.brotherBytes(brothers)
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
@@ -109,7 +93,7 @@ object PowBlockCompanion extends Serializer[PowBlock] {
   }
 
   override def toBytes(modifier: PowBlock): Array[Byte] =
-    modifier.headerBytes ++ modifier.brotherBytes ++ modifier.generatorProposition.bytes
+    modifier.headerBytes ++ modifier.generatorProposition.bytes
 
   override def parseBytes(bytes: Array[Byte]): Try[PowBlock] = {
 
@@ -119,23 +103,12 @@ object PowBlockCompanion extends Serializer[PowBlock] {
      */
     PowBlockHeader.parse(headerBytes).flatMap { header =>
       Try {
-        val (bs, posit) = (0 until header.brothersCount).foldLeft((Seq[PowBlockHeader](), PowBlockHeader.PowHeaderSize)) {
-          case ((brothers, position), _) =>
-            val bBytes = bytes.slice(position, position + PowBlockHeader.PowHeaderSize)
-
-            (brothers :+ PowBlockHeader.parse(bBytes).get,
-              position + PowBlockHeader.PowHeaderSize)
-        }
-        val prop = PublicKey25519PropositionSerializer.parseBytes(bytes.slice(posit, posit + Curve25519.KeyLength)).get
+        val prop = PublicKey25519PropositionSerializer.parseBytes(bytes.slice(48, 48 + Curve25519.KeyLength)).get
         PowBlock(
           header.parentId,
-          header.prevPosId,
           header.timestamp,
           header.nonce,
-          header.brothersCount,
-          header.brothersHash,
           prop,
-          bs
         )
       }
     }
@@ -148,12 +121,8 @@ object PowBlock extends ScorexEncoding {
   implicit val powBlockEncoder: Encoder[PowBlock] = (pb: PowBlock) => {
     Map(
       "id" -> encoder.encodeId(pb.id).asJson,
-      "parentId" -> encoder.encodeId(pb.parentId).asJson,
-      "prevPosId" -> encoder.encodeId(pb.prevPosId).asJson,
       "timestamp" -> pb.timestamp.asJson,
       "nonce" -> pb.nonce.asJson,
-      "brothersHash" -> encoder.encode(pb.brothersHash).asJson,
-      "brothers" -> pb.brothers.map(b => encoder.encodeId(b.id).asJson).asJson
     ).asJson
   }
 }

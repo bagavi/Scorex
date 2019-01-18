@@ -137,7 +137,7 @@ class HybridHistory(val storage: HistoryStorage,
     * @return
     */
   override def append(block: HybridBlock): Try[(HybridHistory, ProgressInfo[HybridBlock])] = Try {
-    log.info(s"Trying to append block ${encoder.encodeId(block.id)} to history")
+    log.debug(s"Trying to append block ${encoder.encodeId(block.id)} to history")
 
     validators.map(_.validate(block)).foreach {
       case Failure(e) =>
@@ -151,8 +151,7 @@ class HybridHistory(val storage: HistoryStorage,
     }
 
     log.info(s"History: block ${encoder.encodeId(block.id)} appended to chain with score ${storage.heightOf(block.id)}. " +
-      s"Best score is ${storage.bestChainScore}. " +
-      s"Pair: ${encoder.encodeId(storage.bestPowId)}")
+      s"Best score is ${storage.bestChainScore}. " )
     statsLogger.foreach(l => l.appendString(timeProvider.time() + ":" +
       lastBlockIds(bestBlock, 50).map(encoder.encodeId).mkString(",")))
     res

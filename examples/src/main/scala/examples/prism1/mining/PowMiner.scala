@@ -171,9 +171,8 @@ object PowMiner extends App {
 
     val ts = System.currentTimeMillis()
 
-    val bHash = if (brothers.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.brotherBytes(brothers))
 
-    val b = PowBlock(parentId, prevPosId, ts, nonce, brothers.size, bHash, proposition, brothers)
+    val b = PowBlock(parentId,  ts, nonce, proposition)
 
     val foundBlock =
       if (b.correctWork(difficulty, settings)) {

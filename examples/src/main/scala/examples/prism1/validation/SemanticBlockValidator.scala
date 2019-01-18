@@ -11,15 +11,8 @@ class SemanticBlockValidator(hash: CryptographicHash[_ <: Digest]) extends Block
   def validate(block: HybridBlock): Try[Unit] = Try {
     block match {
       case powBlock: PowBlock =>
-        require(powBlock.brothersCount >= 0)
         require(powBlock.timestamp >= 0)
 
-        //check brothers data
-        require(powBlock.brothers.size == powBlock.brothersCount)
-        if (powBlock.brothersCount > 0) {
-          require(java.util.Arrays.equals(hash(powBlock.brotherBytes), powBlock.brothersHash))
-        }
     }
   }
-
 }
