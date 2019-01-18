@@ -64,6 +64,9 @@ class HistoryStorage(storage: LSMStore,
     storage.update(version, Seq(), Seq(validityKey(b) -> ByteArrayWrapper(Array(status.code))))
   }
 
+  /*
+  For each block, it stores a key,value pair for its height, difficulty and bestPowIdKey (if the block is the best)
+   */
   def update(b: HybridBlock, difficulty: Option[BigInt], isBest: Boolean): Unit = {
     log.debug(s"Write new best=$isBest block ${b.encodedId}")
     val typeByte = b match {
@@ -74,7 +77,6 @@ class HistoryStorage(storage: LSMStore,
     val blockH: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] =
       Seq(blockHeightKey(b.id) -> ByteArrayWrapper(Longs.toByteArray(parentHeight(b) + 1)))
 
-    // Returns a key value pair which maps from blockid to the blocks difficulty
     val blockDiff: Iterable[(ByteArrayWrapper, ByteArrayWrapper)] = difficulty.map { d =>
       Seq(blockDiffKey(b.id) -> ByteArrayWrapper(d.toByteArray))
     }.getOrElse(Seq())
@@ -94,6 +96,9 @@ class HistoryStorage(storage: LSMStore,
         Seq(idToBAW(b.id) -> ByteArrayWrapper(typeByte +: b.bytes)))
   }
 
+  /*
+  Returns difficulty of mining a block over the given block (or the current best block)
+   */
   // TODO: review me .get
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   def getPoWDifficulty(idOpt: Option[ModifierId]): BigInt = {
@@ -103,7 +108,6 @@ class HistoryStorage(storage: LSMStore,
       case Some(id) =>
         BigInt(storage.get(blockDiffKey(id)).get.data)
       case None if height > 0 =>
-        log.info(s"Came here!!")
         BigInt(storage.get(blockDiffKey(bestPowId)).get.data)
       case _ =>
         settings.initialDifficulty
@@ -111,12 +115,18 @@ class HistoryStorage(storage: LSMStore,
   }
 
 
+  def heightOf(blockId: ModifierId): Option[Long] = storage.get(blockHeightKey(blockId))
+    .map(b => Longs.fromByteArray(b.data))
+
   def parentHeight(b: HybridBlock): Long = heightOf(parentId(b)).getOrElse(0L)
 
   def parentId(block: HybridBlock): ModifierId = block match {
     case powBlock: PowBlock => powBlock.parentId //
   }
 
+  /*
+  For a given block (or id), the below three functions create keys for different parameters of the block.
+   */
   private def validityKey(b: HybridBlock): ByteArrayWrapper =
     ByteArrayWrapper(Sha256(s"validity${b.id}"))
 
@@ -126,9 +136,6 @@ class HistoryStorage(storage: LSMStore,
   private def blockDiffKey(blockId: ModifierId): ByteArrayWrapper = {
     ByteArrayWrapper(Sha256(s"difficulties$blockId"))
   }
-
-  def heightOf(blockId: ModifierId): Option[Long] = storage.get(blockHeightKey(blockId))
-    .map(b => Longs.fromByteArray(b.data))
 
   def isGenesis(b: HybridBlock): Boolean = b match {
     case powB: PowBlock => powB.parentId == settings.GenesisParentId

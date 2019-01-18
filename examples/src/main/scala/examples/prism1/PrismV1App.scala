@@ -72,8 +72,7 @@ class PrismV1App(val settingsFilename: String) extends Application {
 
 object PrismV1App extends App {
   def modifierSerializers: Map[ModifierTypeId, Serializer[_ <: NodeViewModifier]] =
-    Map(PosBlock.ModifierTypeId -> PosBlockCompanion,
-      PowBlock.ModifierTypeId -> PowBlockCompanion,
+    Map(PowBlock.ModifierTypeId -> PowBlockCompanion,
       Transaction.ModifierTypeId -> SimpleBoxTransactionPrismCompanion)
 
   private val settingsFilename = args.headOption.getOrElse("settings.conf")

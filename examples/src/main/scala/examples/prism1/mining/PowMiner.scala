@@ -77,7 +77,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
 
     case MineBlock =>
       if (mining) {
-        log.info("Mining of previous PoW block stopped")
+        log.debug("Mining of previous PoW block stopped")
         cancellableOpt.forall(_.cancel())
 
         context.system.scheduler.scheduleOnce(50.millis) {
@@ -101,7 +101,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val pubkey = pmi.pubkey
 
         val p = Promise[Option[PowBlock]]()
-        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}:${encoder.encodeId(pmi.bestPosId)}")
+        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}")
         cancellableOpt = Some(Cancellable.run() { status =>
           Future {
             var foundBlock: Option[PowBlock] = None
@@ -114,7 +114,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
                 log.info(s"10 hashes tried, difficulty is $difficulty")
               }
             }
-            log.info("Found new block!")
+//            log.info("Found new block!")
 
             p.success(foundBlock)
           }

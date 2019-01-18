@@ -1,6 +1,6 @@
 package examples.prism1.history
 
-import examples.prism1.blocks.{PosBlock, PowBlock}
+import examples.prism1.blocks._
 import scorex.core.consensus.SyncInfo
 import scorex.core.network.message.SyncInfoMessageSpec
 import scorex.core.serialization.Serializer

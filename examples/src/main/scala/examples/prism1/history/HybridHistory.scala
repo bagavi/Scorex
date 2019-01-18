@@ -105,7 +105,7 @@ class HybridHistory(val storage: HistoryStorage,
 
           val mod: ProgressInfo[HybridBlock] = if (isBest) {
             if (isGenesis(powBlock) || powBlock.parentId == bestPowId ) {
-              log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)} at height ${storage.height}")
+//              log.info(s"New best PoW block ${encoder.encodeId(powBlock.id)} at height ${storage.height}")
               //just apply one block to the end
               ProgressInfo(None, Seq(), Seq(powBlock), Seq())
             } else {
@@ -118,8 +118,7 @@ class HybridHistory(val storage: HistoryStorage,
             ProgressInfo(None, Seq(), Seq(), Seq())
           }
           // Vivek: Activiate below once "getPoWDifficulty" is correct.
-          val difficulties = 1 // calcDifficultiesForNewBlock(powBlock)
-          log.info("Updating difficulty")
+          val difficulties =  calcDifficultiesForNewBlock(powBlock)
           storage.update(powBlock, Some(difficulties), isBest)
           mod
 
@@ -159,11 +158,16 @@ class HybridHistory(val storage: HistoryStorage,
     res
   }
 
+  /*
+    Calculates the difficulty of the new block using the observed mining rate
+    of previous "DifficultyRecalcPeriod" blocks.
+   */
   private def calcDifficultiesForNewBlock(powBlock: PowBlock): BigInt = {
     def bounded(newVal: BigInt, oldVal: BigInt): BigInt = if (newVal > oldVal * 2) oldVal * 2 else newVal
 
     val powHeight = storage.parentHeight(powBlock)  + 1
-    if (powHeight > DifficultyRecalcPeriod && powHeight % DifficultyRecalcPeriod == 0) {
+//    if (powHeight > DifficultyRecalcPeriod && powHeight % DifficultyRecalcPeriod == 0) {
+    if (powHeight > DifficultyRecalcPeriod) {
 
       //recalc difficulties
 
@@ -183,7 +187,8 @@ class HybridHistory(val storage: HistoryStorage,
       val newPowDiff = bounded(newPowDiffUnlimited, oldPowDifficulty)
 
       log.info(s"PoW difficulty changed at ${encoder.encodeId(powBlock.id)}: old $oldPowDifficulty, new $newPowDiff. " +
-        s" last: $lastPow, head: $powBlocksHead ")
+//        s" last: $lastPow, head: $powBlocksHead, " +
+        s" realTime ${realTime},  expectedTime  ${expectedTime}, ")
       newPowDiff
     } else {
       //Same difficulty as in previous block

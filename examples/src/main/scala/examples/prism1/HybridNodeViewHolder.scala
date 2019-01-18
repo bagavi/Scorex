@@ -170,7 +170,6 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
     val genesisBox = PublicKey25519NoncedBox(genesisAccountPriv.publicImage, Nonce @@ 0L, GenesisBalance)
     val attachment = "genesis attachment".getBytes
-//    val posGenesis = PosBlock.create(powGenesis.id, 0, genesisTxs, genesisBox, attachment, genesisAccountPriv)
 
     var history = HybridHistory.readOrGenerate(settings, minerSettings, timeProvider)
     history = history.append(powGenesis).get._1

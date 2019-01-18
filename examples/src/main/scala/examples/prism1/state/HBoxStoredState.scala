@@ -54,7 +54,7 @@ case class HBoxStoredState(store: LSMStore, override val version: VersionTag) ex
         //coinbase transaction is generated implicitly when block is applied to state, no validation needed
         require((pwb.parentId == version)
           || pwb.brothers.exists(_.id == version), s"Incorrect state version: ${encoder.encodeVersion(version)} " +
-          s"found, (${encoder.encodeId(pwb.prevPosId)} || ${encoder.encodeId(pwb.parentId)} ||" +
+          s"found, (${encoder.encodeId(pwb.parentId)} ||" +
           s" ${pwb.brothers.map(b => encoder.encodeId(b.id))}) expected")
 
     }

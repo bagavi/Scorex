@@ -3,7 +3,7 @@ package examples.prism1.api.http
 import akka.actor.{ActorRef, ActorRefFactory}
 import akka.http.scaladsl.server.Route
 import examples.commons.SimpleBoxTransactionMemPool
-import examples.prism1.blocks.{HybridBlock, PosBlock, PowBlock}
+import examples.prism1.blocks.{HybridBlock, PowBlock}
 import examples.prism1.history.HybridHistory
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
@@ -40,13 +40,11 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
   def infoRoute: Route = (get & path("info")) {
     withNodeView { view =>
       val bestBlockJson = view.history.bestBlock match {
-        case block: PosBlock => block.asJson
         case _ => view.history.bestBlock.asInstanceOf[PowBlock].asJson
       }
 
       ApiResponse(
         "height" -> view.history.height.toString.asJson,
-        "bestPoS" -> encoder.encodeId(view.history.bestPosId).asJson,
         "bestPoW" -> encoder.encodeId(view.history.bestPowId).asJson,
         "bestBlock" -> bestBlockJson,
         "stateVersion" -> encoder.encodeVersion(view.state.version).asJson
@@ -58,23 +56,16 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     withNodeView { view =>
       val pubkeys = view.vault.publicKeys
 
-      def isMyPosBlock(b: HybridBlock): Boolean = b match {
-        case pos: PosBlock => pubkeys.exists(pk => java.util.Arrays.equals(pk.pubKeyBytes, pos.generatorBox.proposition.pubKeyBytes))
-        case _ => false
-      }
-
       def isMyPowBlock(b: HybridBlock): Boolean = b match {
         case pow: PowBlock => pubkeys.exists(pk => java.util.Arrays.equals(pk.pubKeyBytes, pow.generatorProposition.pubKeyBytes))
         case _ => false
       }
 
-      val posCount = view.history.count(isMyPosBlock)
       val powCount = view.history.count(isMyPowBlock)
 
       ApiResponse(
         "pubkeys" -> pubkeys.map(pk => encoder.encode(pk.pubKeyBytes)).asJson,
-        "count" -> (posCount + powCount).asJson,
-        "posCount" -> posCount.asJson,
+        "count" -> (powCount).asJson,
         "powCount" -> powCount.asJson
       )
     }
