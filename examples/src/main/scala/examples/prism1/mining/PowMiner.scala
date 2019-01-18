@@ -42,13 +42,11 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
       view: CurrentView[HybridHistory, HBoxStoredState, HBoxWallet, SimpleBoxTransactionPrismMemPool] =>
 
         val difficulty = view.history.powDifficulty
-        val pairCompleted = view.history.pairCompleted
         val bestPowBlock = view.history.bestPowBlock
-        val bestPosId = view.history.bestPosId
         // TODO: fixme, What should we do if `view.vault.generateNewSecret().publicKeys` is empty?
         @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
         val pubkey = view.vault.publicKeys.headOption getOrElse view.vault.generateNewSecret().publicKeys.head
-        PowMiningInfo(pairCompleted, difficulty, bestPowBlock, bestPosId, pubkey)
+        PowMiningInfo(difficulty, bestPowBlock, pubkey)
     }
     GetDataFromCurrentView[HybridHistory,
       HBoxStoredState,
@@ -96,7 +94,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
 
         // V: In hybrid protocol the "next" PoW block was mined only when the current best PoWblock was paired to a PoS
         // block. Here we always try to mine the next PoW block
-        val (parentId, prevPosId, brothers) = (bestPowBlock.id, pmi.bestPosId, Seq()) //new step
+        val parentId = bestPowBlock.id //new step
 
         val pubkey = pmi.pubkey
 
@@ -108,7 +106,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
             var attemps = 0
 
             while (status.nonCancelled && foundBlock.isEmpty) {
-              foundBlock = powIteration(parentId, prevPosId, brothers, difficulty, settings, pubkey, settings.blockGenerationDelay)
+              foundBlock = powIteration(parentId, difficulty, settings, pubkey, settings.blockGenerationDelay)
               attemps = attemps + 1
               if (attemps % 10 == 9) {
                 log.info(s"10 hashes tried, difficulty is $difficulty")
@@ -151,17 +149,13 @@ object PowMiner extends App {
 
     case object MineBlock
 
-    case class PowMiningInfo(pairCompleted: Boolean,
-                             powDifficulty: BigInt,
+    case class PowMiningInfo(powDifficulty: BigInt,
                              bestPowBlock: PowBlock,
-                             bestPosId: ModifierId,
                              pubkey: PublicKey25519Proposition)
 
   }
 
   def powIteration(parentId: BlockId,
-                   prevPosId: BlockId,
-                   brothers: Seq[PowBlockHeader],
                    difficulty: BigInt,
                    settings: HybridMiningSettings,
                    proposition: PublicKey25519Proposition,

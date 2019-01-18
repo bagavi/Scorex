@@ -40,14 +40,9 @@ class HybridHistory(val storage: HistoryStorage,
 
   require(NodeViewModifier.ModifierIdSize == 32, "32 bytes ids assumed")
 
-  lazy val pairCompleted: Boolean = true
-
   val height: Long = storage.height
-  /**
-    * since we don't have best pos, we just set it to a constant
-    * this constant should be same as HybridMiningSettings.GenesisParentId
-    */
-  val bestPosId: ModifierId = bytesToId(Array.fill(32)(1: Byte))
+
+
   val bestPowId: ModifierId = storage.bestPowId
   lazy val bestPowBlock: PowBlock = storage.bestPowBlock
   lazy val bestBlock: HybridBlock = bestPowBlock
