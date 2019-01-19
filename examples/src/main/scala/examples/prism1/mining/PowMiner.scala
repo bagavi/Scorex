@@ -2,6 +2,7 @@ package examples.prism1.mining
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import examples.commons.SimpleBoxTransactionPrismMemPool
+import examples.commons.{SimpleBoxTransactionPrism, SimpleBoxTransactionPrismCompanion}
 import examples.prism1.blocks.{HybridBlock, PowBlock, PowBlockCompanion, PowBlockHeader}
 import examples.prism1.history.HybridHistory
 import examples.prism1.state.HBoxStoredState
@@ -43,10 +44,17 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
 
         val difficulty = view.history.powDifficulty
         val bestPowBlock = view.history.bestPowBlock
+         // Pick transactions from the view's mempool
+        val txs = view.pool.take(TransactionsPerBlock).foldLeft(Seq[SimpleBoxTransactionPrism]()) { case (collected, tx) =>
+        if (view.state.validate(tx).isSuccess &&
+          tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id))) collected :+ tx
+        else collected
+        }
+
         // TODO: fixme, What should we do if `view.vault.generateNewSecret().publicKeys` is empty?
         @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
         val pubkey = view.vault.publicKeys.headOption getOrElse view.vault.generateNewSecret().publicKeys.head
-        PowMiningInfo(difficulty, bestPowBlock, pubkey)
+        PowMiningInfo(difficulty, bestPowBlock, pubkey, txs)
     }
     GetDataFromCurrentView[HybridHistory,
       HBoxStoredState,
@@ -97,6 +105,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val parentId = bestPowBlock.id //new step
 
         val pubkey = pmi.pubkey
+        val txs = pmi.txs
 
         val p = Promise[Option[PowBlock]]()
         log.info(s"Starting new block mining for ${bestPowBlock.encodedId}")
@@ -106,7 +115,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
             var attemps = 0
 
             while (status.nonCancelled && foundBlock.isEmpty) {
-              foundBlock = powIteration(parentId, difficulty, settings, pubkey, settings.blockGenerationDelay)
+              foundBlock = powIteration(parentId, difficulty, settings, pubkey, settings.blockGenerationDelay, txs)
               attemps = attemps + 1
               if (attemps % 10 == 9) {
                 log.info(s"10 hashes tried, difficulty is $difficulty")
@@ -151,22 +160,24 @@ object PowMiner extends App {
 
     case class PowMiningInfo(powDifficulty: BigInt,
                              bestPowBlock: PowBlock,
-                             pubkey: PublicKey25519Proposition)
+                             pubkey: PublicKey25519Proposition,
+                             txs: Seq[SimpleBoxTransactionPrism])
 
   }
-
+  private val TransactionsPerBlock: Int = 50
   def powIteration(parentId: BlockId,
                    difficulty: BigInt,
                    settings: HybridMiningSettings,
                    proposition: PublicKey25519Proposition,
-                   blockGenerationDelay: FiniteDuration
+                   blockGenerationDelay: FiniteDuration,
+                   txs: Seq[SimpleBoxTransactionPrism]
                   ): Option[PowBlock] = {
     val nonce = Random.nextLong()
 
     val ts = System.currentTimeMillis()
 
 
-    val b = PowBlock(parentId,  ts, nonce, proposition)
+    val b = PowBlock(parentId,  ts, nonce, proposition, txs)
 
     val foundBlock =
       if (b.correctWork(difficulty, settings)) {

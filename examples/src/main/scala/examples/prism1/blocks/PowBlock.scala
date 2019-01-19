@@ -1,7 +1,7 @@
 package examples.prism1.blocks
 
-import com.google.common.primitives.{Ints, Longs}
-import examples.commons.SimpleBoxTransactionPrism
+import com.google.common.primitives.{Bytes, Ints, Longs}
+import examples.commons.{SimpleBoxTransactionPrism, SimpleBoxTransactionPrismCompanion}
 import examples.prism1.mining.HybridMiningSettings
 import io.circe.Encoder
 import io.circe.syntax._
@@ -21,8 +21,9 @@ class PowBlockHeader(
                       val parentId: BlockId,
                       val timestamp: Block.Timestamp,
                       val nonce: Long,
-                      val generatorProposition: PublicKey25519Proposition) extends ScorexEncoding {
-
+                      val generatorProposition: PublicKey25519Proposition,
+                      val txsCount: Int,
+                      val txsHash: Array[Byte]) extends ScorexEncoding {
 
   import PowBlockHeader._
 
@@ -30,8 +31,9 @@ class PowBlockHeader(
     idToBytes(parentId) ++
       Longs.toByteArray(timestamp) ++
       Longs.toByteArray(nonce) ++
-      generatorProposition.pubKeyBytes
-
+      generatorProposition.pubKeyBytes ++
+      Ints.toByteArray(txsCount) ++
+      txsHash
   def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = correctWorkDone(id, difficulty, s)
 
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
@@ -42,7 +44,7 @@ class PowBlockHeader(
 
 object PowBlockHeader {
   //one 64 bit pointer, 2 long values and a pubkey.
-  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength
+  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength + 4 + Blake2b256.DigestSize
 
   def parse(bytes: Array[Byte]): Try[PowBlockHeader] = Try {
     require(bytes.length == PowHeaderSize)
@@ -50,8 +52,10 @@ object PowBlockHeader {
     val timestamp = Longs.fromByteArray(bytes.slice(32, 40))
     val nonce = Longs.fromByteArray(bytes.slice(40, 48))
     val prop = PublicKey25519Proposition(PublicKey @@ bytes.slice(48, 80))
+    val txsCount = Ints.fromByteArray(bytes.slice(80, 84))
+    val txsHash = bytes.slice(84, 116)
 
-    new PowBlockHeader(parentId, timestamp, nonce, prop)
+    new PowBlockHeader(parentId, timestamp, nonce, prop, txsCount, txsHash)
   }
 
   def correctWorkDone(id: ModifierId, difficulty: BigInt, s: HybridMiningSettings): Boolean = {
@@ -63,8 +67,12 @@ object PowBlockHeader {
 case class PowBlock(override val parentId: BlockId,
                     override val timestamp: Block.Timestamp,
                     override val nonce: Long,
-                    override val generatorProposition: PublicKey25519Proposition)
-  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition)
+                    override val generatorProposition: PublicKey25519Proposition,
+                    val txs: Seq[SimpleBoxTransactionPrism]
+                   )
+  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length,
+    if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+  )
     with HybridBlock {
 
   override type M = PowBlock
@@ -75,40 +83,55 @@ case class PowBlock(override val parentId: BlockId,
 
   override lazy val modifierTypeId: ModifierTypeId = PowBlock.ModifierTypeId
 
+  lazy val txBytes = serializer.txBytes(txs)
 
-  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition)
+  override val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+
+  val txCounts: Int =  txs.length
+
+  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts, txsHash)
 
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
   //todo: coinbase transaction?
-  override def transactions: Seq[SimpleBoxTransactionPrism] = Seq()
+  def transactions: Seq[SimpleBoxTransactionPrism] = Seq()
 }
 
-object PowBlockCompanion extends Serializer[PowBlock] {
+object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
 
-  //
-  def brotherBytes(brothers: Seq[PowBlockHeader]): Array[Byte] = brothers.foldLeft(Array[Byte]()) { case (ba, b) =>
-    ba ++ b.headerBytes
+  def txBytes(transactions: Seq[SimpleBoxTransactionPrism]): Array[Byte] = {
+    //For each transaction, encoding its length and the transaction .
+    transactions.sortBy(t => encoder.encodeId(t.id)).foldLeft(Array[Byte]()) { (a, b) =>
+      Bytes.concat(Ints.toByteArray(b.bytes.length), b.bytes, a)
+    }
   }
 
   override def toBytes(modifier: PowBlock): Array[Byte] =
-    modifier.headerBytes ++ modifier.generatorProposition.bytes
+    modifier.headerBytes ++ modifier.txBytes
 
   override def parseBytes(bytes: Array[Byte]): Try[PowBlock] = {
 
     val headerBytes = bytes.slice(0, PowBlockHeader.PowHeaderSize)
-    /*
-      Loop through the PoWBlock header to extract brother block hashes
-     */
+
+    var position =  PowBlockHeader.PowHeaderSize // The transaction information starts here
+
     PowBlockHeader.parse(headerBytes).flatMap { header =>
       Try {
+        val txs: Seq[SimpleBoxTransactionPrism] = (0 until header.txsCount) map { _ =>
+          val l = Ints.fromByteArray(bytes.slice(position, position + 4)) // Contains the length of the transaction
+          position = position + 4
+          val tx = SimpleBoxTransactionPrismCompanion.parseBytes(bytes.slice(position, position + l)).get
+          position = position + l
+          tx
+        }
         val prop = PublicKey25519PropositionSerializer.parseBytes(bytes.slice(48, 48 + Curve25519.KeyLength)).get
         PowBlock(
           header.parentId,
           header.timestamp,
           header.nonce,
-          prop,
+          header.generatorProposition,
+          txs
         )
       }
     }

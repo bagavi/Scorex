@@ -155,16 +155,13 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
     val genesisAccount = PrivateKey25519Companion.generateKeys("genesis".getBytes)
     val genesisAccountPriv = genesisAccount._1
-    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 4, genesisAccount._2)
-
-
-
     val genesisTxs = Seq(SimpleBoxTransactionPrism(
       IndexedSeq(genesisAccountPriv -> Nonce @@ 0L),
       icoMembers.map(_ -> GenesisBalance),
       0L,
       0L))
 
+    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 4, genesisAccount._2, genesisTxs)
 
     log.info(s"Initialize state with transaction ${genesisTxs.headOption} with boxes ${genesisTxs.headOption.map(_.newBoxes)}")
 
