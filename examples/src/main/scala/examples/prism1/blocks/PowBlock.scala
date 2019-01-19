@@ -142,6 +142,7 @@ object PowBlock extends ScorexEncoding with ScorexLogging {
   implicit val powBlockEncoder: Encoder[PowBlock] = (pb: PowBlock) => {
     Map(
       "id" -> encoder.encodeId(pb.id).asJson,
+      "parentId" -> encoder.encodeId(pb.parentId).asJson,
       "timestamp" -> pb.timestamp.asJson,
       "nonce" -> pb.nonce.asJson,
     ).asJson
