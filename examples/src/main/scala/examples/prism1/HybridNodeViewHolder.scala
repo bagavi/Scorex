@@ -165,7 +165,11 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
       icoMembers.map(_ -> GenesisBalance),
       0L,
       0L))
-    val txsHash = Blake2b256(PowBlockCompanion.txBytes(genesisTxs))
+    /**
+     * TODO: change txsHash
+     * val txsHash = Blake2b256(PowBlockCompanion.txBytes(genesisTxs))
+     */
+    val txsHash = Array.fill(32)(0: Byte)
 
     val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 2, genesisAccount._2, genesisTxs, txsHash)
 
