@@ -36,7 +36,9 @@ class PowBlockHeader(
       Ints.toByteArray(txsCount) ++
       txsHash
 
-  def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = correctWorkDone(id, difficulty, s)
+  def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = {
+    correctWorkDone(id, difficulty, s) || this.parentId == bytesToId(Array.fill(32)(0: Byte))
+  }
 
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
 

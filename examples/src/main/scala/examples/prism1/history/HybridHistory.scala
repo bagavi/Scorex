@@ -189,7 +189,7 @@ class HybridHistory(val storage: HistoryStorage,
       assert(modifierById(powBlock.parentId).isDefined, "Parent should always be in history")
       // TODO: review me .get and asInstanceOf
       @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-      val parentPoWId: ModifierId = modifierById(powBlock.parentId).get.asInstanceOf[PowBlock].parentId
+      val parentPoWId: ModifierId = modifierById(powBlock.parentId).get.asInstanceOf[PowBlock].id
       storage.getPoWDifficulty(Some(parentPoWId))
     }
   }

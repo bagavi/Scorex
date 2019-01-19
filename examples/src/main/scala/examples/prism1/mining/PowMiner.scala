@@ -108,17 +108,17 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val txs = pmi.txs
 
         val p = Promise[Option[PowBlock]]()
-        log.info(s"Starting new block mining for ${bestPowBlock.encodedId}")
+        log.info(s"Starting new block mining on ${bestPowBlock.encodedId}")
         cancellableOpt = Some(Cancellable.run() { status =>
           Future {
             var foundBlock: Option[PowBlock] = None
-            var attemps = 0
+            var attempts = 0
 
             while (status.nonCancelled && foundBlock.isEmpty) {
               foundBlock = powIteration(parentId, difficulty, settings, pubkey, settings.blockGenerationDelay, txs)
-              attemps = attemps + 1
-              if (attemps % 10 == 9) {
-                log.info(s"10 hashes tried, difficulty is $difficulty")
+              attempts = attempts + 1
+              if (attempts % 100 == 99) {
+                log.info(s"${attempts} hashes tried, difficulty is $difficulty")
               }
             }
 //            log.info("Found new block!")
