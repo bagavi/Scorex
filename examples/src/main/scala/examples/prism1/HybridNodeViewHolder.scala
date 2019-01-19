@@ -90,6 +90,8 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
 
 object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
+  private val GenesisAccountsNum = 50
+
   private val icoMembers: IndexedSeq[PublicKey25519Proposition] = IndexedSeq(
     "Gh5ipRV2fzCn5176CPHnW4EVk9MR2HU6m91ZhoPxUwHN",
     "5r37KJVi3DSKsh5atfhdN6CbpvEh6mKwEZvzuCWjtcf1",
@@ -151,7 +153,6 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
     val settings: ScorexSettings = hybridSettings.scorexSettings
     val minerSettings: HybridMiningSettings = hybridSettings.mining
 
-    val GenesisAccountsNum = 50
     val GenesisBalance = Value @@ 100000000L
 
     //propositions with wallet seeds minerNode1 (20accs), minerNode2 (20 accs), minerNode3 (10 accs)
