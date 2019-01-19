@@ -22,7 +22,9 @@ class PowBlockHeader(
                       val timestamp: Block.Timestamp,
                       val nonce: Long,
                       val generatorProposition: PublicKey25519Proposition,
-                      val txsCount: Int) extends ScorexEncoding with ScorexLogging {
+                      val txsCount: Int,
+                      val txsHash: Array[Byte]
+                      ) extends ScorexEncoding with ScorexLogging {
 
   import PowBlockHeader._
 
@@ -31,20 +33,23 @@ class PowBlockHeader(
       Longs.toByteArray(timestamp) ++
       Longs.toByteArray(nonce) ++
       generatorProposition.pubKeyBytes ++
-      Ints.toByteArray(txsCount)
+      Ints.toByteArray(txsCount) ++
+      txsHash
+
   def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = correctWorkDone(id, difficulty, s)
 
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
 
   override lazy val toString: String = s"PowBlockHeader(id: ${encoder.encodeId(id)})" +
-    s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, " + s"nonce: $nonce)"
+    s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, " + s"nonce: $nonce" +
+    s"txsCount: ${txsCount})"
 }
 
 object PowBlockHeader extends ScorexLogging{
 
 
   //one 64 bit pointer, 2 long values and a pubkey.
-  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength + 4 //+ Blake2b256.DigestSize
+  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength + 4 + Blake2b256.DigestSize
 
   def parse(bytes: Array[Byte]): Try[PowBlockHeader] = Try {
     require(bytes.length == PowHeaderSize)
@@ -53,9 +58,9 @@ object PowBlockHeader extends ScorexLogging{
     val nonce = Longs.fromByteArray(bytes.slice(40, 48))
     val prop = PublicKey25519Proposition(PublicKey @@ bytes.slice(48, 80))
     val txsCount = Ints.fromByteArray(bytes.slice(80, 84))
-//    val txsHash = bytes.slice(84, 116)
+    val txsHash = bytes.slice(84, 116)
 
-    new PowBlockHeader(parentId, timestamp, nonce, prop, txsCount)
+    new PowBlockHeader(parentId, timestamp, nonce, prop, txsCount, txsHash)
   }
 
   def correctWorkDone(id: ModifierId, difficulty: BigInt, s: HybridMiningSettings): Boolean = {
@@ -68,9 +73,10 @@ case class PowBlock(override val parentId: BlockId,
                     override val timestamp: Block.Timestamp,
                     override val nonce: Long,
                     override val generatorProposition: PublicKey25519Proposition,
-                    val txs: Seq[SimpleBoxTransactionPrism]
+                    val txs: Seq[SimpleBoxTransactionPrism],
+                    override val txsHash: Array[Byte]
                    )
-  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length)
+  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length, txsHash )
     with HybridBlock with ScorexLogging {
   override type M = PowBlock
 
@@ -86,7 +92,7 @@ case class PowBlock(override val parentId: BlockId,
 
   val txCounts: Int =  txs.length
 
-  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts)
+  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts, txsHash)
 
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
@@ -128,7 +134,8 @@ object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
           header.timestamp,
           header.nonce,
           header.generatorProposition,
-          txs
+          txs,
+          header.txsHash
         )
       }
     }
@@ -138,13 +145,13 @@ object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
 object PowBlock extends ScorexEncoding with ScorexLogging {
   val ModifierTypeId: ModifierTypeId = scorex.core.ModifierTypeId @@ 3.toByte
 
-
   implicit val powBlockEncoder: Encoder[PowBlock] = (pb: PowBlock) => {
     Map(
       "id" -> encoder.encodeId(pb.id).asJson,
       "parentId" -> encoder.encodeId(pb.parentId).asJson,
       "timestamp" -> pb.timestamp.asJson,
       "nonce" -> pb.nonce.asJson,
+      "txscount" -> pb.txsCount.asJson,
     ).asJson
   }
 }

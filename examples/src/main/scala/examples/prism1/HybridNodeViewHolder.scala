@@ -14,6 +14,7 @@ import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.transaction.state.PrivateKey25519Companion
 import scorex.core.utils.{NetworkTimeProvider, ScorexEncoding}
 import scorex.core.{ModifierTypeId, NodeViewHolder, NodeViewModifier}
+import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import scorex.crypto.signatures.PublicKey
 import scorex.util.ScorexLogging
@@ -160,8 +161,10 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
       icoMembers.map(_ -> GenesisBalance),
       0L,
       0L))
+    val txsHash = Blake2b256(PowBlockCompanion.txBytes(genesisTxs))
+    log.info(s"Length of txHash ${txsHash.length}")
 
-    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 4, genesisAccount._2, genesisTxs)
+    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 2, genesisAccount._2, genesisTxs, txsHash)
 
     log.info(s"Initialize state with transaction ${genesisTxs.headOption} with boxes ${genesisTxs.headOption.map(_.newBoxes)}")
 
