@@ -176,6 +176,7 @@ object PowMiner extends App {
 
     val ts = System.currentTimeMillis()
 
+    val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
 
     val b = PowBlock(parentId,  ts, nonce, proposition, txs)
 

@@ -154,6 +154,7 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
         !encoder.encode(hybridSettings.walletSettings.seed).startsWith("genesis"))
       .ensuring(_.boxes().forall(b => gs.closedBox(b.box.id).isDefined))
 
+    log.info("Genesis block created")
     (history, gs, gw, SimpleBoxTransactionMemPool.emptyPool)
   }
 }

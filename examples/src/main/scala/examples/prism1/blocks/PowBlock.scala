@@ -13,7 +13,7 @@ import scorex.core.transaction.box.proposition.{PublicKey25519Proposition, Publi
 import scorex.core.utils.ScorexEncoding
 import scorex.crypto.hash.Blake2b256
 import scorex.crypto.signatures.{Curve25519, PublicKey}
-import scorex.util.{ModifierId, bytesToId, idToBytes}
+import scorex.util.{ModifierId, ScorexLogging, bytesToId, idToBytes}
 
 import scala.util.Try
 
@@ -22,18 +22,16 @@ class PowBlockHeader(
                       val timestamp: Block.Timestamp,
                       val nonce: Long,
                       val generatorProposition: PublicKey25519Proposition,
-                      val txsCount: Int,
-                      val txsHash: Array[Byte]) extends ScorexEncoding {
+                      val txsCount: Int) extends ScorexEncoding with ScorexLogging {
 
   import PowBlockHeader._
 
-  lazy val headerBytes: Array[Byte] =
+  val headerBytes: Array[Byte] =
     idToBytes(parentId) ++
       Longs.toByteArray(timestamp) ++
       Longs.toByteArray(nonce) ++
       generatorProposition.pubKeyBytes ++
-      Ints.toByteArray(txsCount) ++
-      txsHash
+      Ints.toByteArray(txsCount)
   def correctWork(difficulty: BigInt, s: HybridMiningSettings): Boolean = correctWorkDone(id, difficulty, s)
 
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
@@ -42,9 +40,11 @@ class PowBlockHeader(
     s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, " + s"nonce: $nonce)"
 }
 
-object PowBlockHeader {
+object PowBlockHeader extends ScorexLogging{
+
+
   //one 64 bit pointer, 2 long values and a pubkey.
-  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength + 4 + Blake2b256.DigestSize
+  val PowHeaderSize = NodeViewModifier.ModifierIdSize + 8 * 2 + Curve25519.KeyLength + 4 //+ Blake2b256.DigestSize
 
   def parse(bytes: Array[Byte]): Try[PowBlockHeader] = Try {
     require(bytes.length == PowHeaderSize)
@@ -53,9 +53,9 @@ object PowBlockHeader {
     val nonce = Longs.fromByteArray(bytes.slice(40, 48))
     val prop = PublicKey25519Proposition(PublicKey @@ bytes.slice(48, 80))
     val txsCount = Ints.fromByteArray(bytes.slice(80, 84))
-    val txsHash = bytes.slice(84, 116)
+//    val txsHash = bytes.slice(84, 116)
 
-    new PowBlockHeader(parentId, timestamp, nonce, prop, txsCount, txsHash)
+    new PowBlockHeader(parentId, timestamp, nonce, prop, txsCount)
   }
 
   def correctWorkDone(id: ModifierId, difficulty: BigInt, s: HybridMiningSettings): Boolean = {
@@ -70,11 +70,8 @@ case class PowBlock(override val parentId: BlockId,
                     override val generatorProposition: PublicKey25519Proposition,
                     val txs: Seq[SimpleBoxTransactionPrism]
                    )
-  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length,
-    if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
-  )
-    with HybridBlock {
-
+  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length)
+    with HybridBlock with ScorexLogging {
   override type M = PowBlock
 
   override lazy val serializer = PowBlockCompanion
@@ -85,17 +82,17 @@ case class PowBlock(override val parentId: BlockId,
 
   lazy val txBytes = serializer.txBytes(txs)
 
-  override val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+//  override val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
 
   val txCounts: Int =  txs.length
 
-  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts, txsHash)
+  lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts)
 
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
   //todo: coinbase transaction?
-  def transactions: Seq[SimpleBoxTransactionPrism] = Seq()
+  override def transactions: Seq[SimpleBoxTransactionPrism] = Seq()
 }
 
 object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
@@ -138,8 +135,9 @@ object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
   }
 }
 
-object PowBlock extends ScorexEncoding {
+object PowBlock extends ScorexEncoding with ScorexLogging {
   val ModifierTypeId: ModifierTypeId = scorex.core.ModifierTypeId @@ 3.toByte
+
 
   implicit val powBlockEncoder: Encoder[PowBlock] = (pb: PowBlock) => {
     Map(
