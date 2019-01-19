@@ -41,8 +41,7 @@ class PowBlockHeader(
   lazy val id: ModifierId = bytesToId(Blake2b256(headerBytes))
 
   override lazy val toString: String = s"PowBlockHeader(id: ${encoder.encodeId(id)})" +
-    s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, " + s"nonce: $nonce" +
-    s"txsCount: ${txsCount})"
+    s"(parentId: ${encoder.encodeId(parentId)}, time: $timestamp, nonce: $nonce, txsCount: $txsCount)"
 }
 
 object PowBlockHeader extends ScorexLogging{
@@ -93,7 +92,6 @@ case class PowBlock(override val parentId: BlockId,
   val txCounts: Int =  txs.length
 
   lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts, txsHash)
-
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
@@ -152,6 +150,7 @@ object PowBlock extends ScorexEncoding with ScorexLogging {
       "timestamp" -> pb.timestamp.asJson,
       "nonce" -> pb.nonce.asJson,
       "txscount" -> pb.txsCount.asJson,
+//      "txsHash" -> encoder.encode(pb.txsHash).asJson
     ).asJson
   }
 }
