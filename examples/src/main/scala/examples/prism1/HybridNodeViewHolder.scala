@@ -17,7 +17,7 @@ import scorex.core.{ModifierTypeId, NodeViewHolder, NodeViewModifier}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.encode.Base58
 import scorex.crypto.signatures.PublicKey
-import scorex.util.ScorexLogging
+import scorex.util.{ScorexLogging, bytesToId}
 
 //import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -166,8 +166,10 @@ object HybridNodeViewHolder extends ScorexLogging with ScorexEncoding {
       0L,
       0L))
     val txsHash = Blake2b256(PowBlockCompanion.txBytes(genesisTxs))
+    val minerId = bytesToId(Blake2b256("0")) // The genesis block is not mined by any miner and thus has an id 0
 
-    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 2, genesisAccount._2, genesisTxs, txsHash)
+    val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 2,
+      genesisAccount._2, genesisTxs, txsHash, minerId)
 
     log.info(s"Initialize state with transaction ${genesisTxs.headOption} with boxes ${genesisTxs.headOption.map(_.newBoxes)}")
 

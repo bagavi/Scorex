@@ -9,7 +9,8 @@ import net.ceedubs.ficus.readers.ValueReader
 import scorex.core.bytesToId
 import scorex.core.settings.ScorexSettings.readConfigFromPath
 import scorex.core.settings._
-import scorex.util.ScorexLogging
+import scorex.crypto.hash.Blake2b256
+import scorex.util.{ScorexLogging}
 
 import scala.concurrent.duration._
 
@@ -27,9 +28,11 @@ case class HybridMiningSettings(offlineGeneration: Boolean,
                                 posAttachmentSize: Int,
                                 rParamX10: Int,
                                 initialDifficulty: BigInt,
-                                blockNetworkTransmissionDelay: FiniteDuration) {
+                                blockNetworkTransmissionDelay: FiniteDuration,
+                                minerNumber: String) {
   lazy val MaxTarget = BigInt(1, Array.fill(32)(Byte.MinValue))
   lazy val GenesisParentId = bytesToId(Array.fill(32)(0: Byte))
+  lazy val minerId = bytesToId(Blake2b256(minerNumber))
 }
 
 object HybridSettings extends ScorexLogging with SettingsReaders {

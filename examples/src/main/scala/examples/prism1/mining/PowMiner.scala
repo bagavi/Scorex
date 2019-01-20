@@ -13,7 +13,7 @@ import scorex.core.block.Block.BlockId
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.utils.ScorexEncoding
 import scorex.crypto.hash.Blake2b256
-import scorex.util.{ModifierId, ScorexLogging}
+import scorex.util.{ModifierId, ScorexLogging, bytesToId}
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -174,11 +174,11 @@ object PowMiner extends App {
                   ): Option[PowBlock] = {
     val nonce = Random.nextLong()
 
-    val ts = System.currentTimeMillis()
+    val timeStamp = System.currentTimeMillis()
 
     val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
 
-    val b = PowBlock(parentId,  ts, nonce, proposition, txs, txsHash)
+    val b = PowBlock(parentId,  timeStamp, nonce, proposition, txs, txsHash, settings.minerId)
 
     val foundBlock =
       if (b.correctWork(difficulty, settings)) {
