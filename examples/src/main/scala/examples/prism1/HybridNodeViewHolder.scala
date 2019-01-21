@@ -3,7 +3,7 @@ package examples.prism1
 import akka.actor.{ActorRef, ActorSystem, Cancellable, Props}
 import examples.commons._
 import examples.prism1.blocks._
-import examples.prism1.history.{HistoryVisualizer, HybridHistory, HybridSyncInfo}
+import examples.prism1.history.{HybridHistory, HybridSyncInfo}
 import examples.prism1.mining.{HybridMiningSettings, HybridSettings}
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
@@ -37,8 +37,8 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
   override lazy val scorexSettings: ScorexSettings = hybridSettings.scorexSettings
   private lazy val minerSettings: HybridMiningSettings = hybridSettings.mining
 
-  protected val visualizer: ActorRef = context.actorOf(HistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
-  protected val visualizeTimer: Cancellable = context.system.scheduler.schedule(5 seconds, 30 seconds, self, HistoryVisualizer.VisualizeClock)
+//  protected val visualizer: ActorRef = context.actorOf(HistoryVisualizer.props(scorexSettings.dataDir + "/blocks"))
+//  protected val visualizeTimer: Cancellable = context.system.scheduler.schedule(5 seconds, 30 seconds, self, HistoryVisualizer.VisualizeClock)
 
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
@@ -53,19 +53,19 @@ class HybridNodeViewHolder(hybridSettings: HybridSettings,
     */
   override def postStop(): Unit = {
     super.postStop()
-    visualizeTimer.cancel()
+//    visualizeTimer.cancel()
   }
 
   /**
     * Extend receive VisualizeClock
     */
-  def receiveVisualizeClock: Receive = {
-    case HistoryVisualizer.VisualizeClock =>
-      visualizer ! HistoryVisualizer.VisualizeToFile(history().lastPowBlocks(Int.MaxValue, history().bestPowBlock))
-  }
-  override def receive: Receive = {
-    receiveVisualizeClock orElse super.receive
-  }
+//  def receiveVisualizeClock: Receive = {
+//    case HistoryVisualizer.VisualizeClock =>
+//      visualizer ! HistoryVisualizer.VisualizeToFile(history().lastPowBlocks(Int.MaxValue, history().bestPowBlock))
+//  }
+//  override def receive: Receive = {
+//    receiveVisualizeClock orElse super.receive
+//  }
 
   /**
     * Hard-coded initial view all the honest nodes in a network are making progress from.

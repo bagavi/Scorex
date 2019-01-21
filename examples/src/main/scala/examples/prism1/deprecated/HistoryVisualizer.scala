@@ -1,9 +1,9 @@
-package examples.prism1.history
+package examples.prism1.deprecated
 
 import java.io.{BufferedWriter, File, FileWriter}
 import java.util.Calendar
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, Props}
 import examples.prism1.blocks.HybridBlock
 
 import scala.concurrent.ExecutionContext
