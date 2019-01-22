@@ -22,7 +22,7 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     with ScorexEncoding {
 
   override val route: Route = (pathPrefix("debug") & withCors) {
-    infoRoute ~ chain ~ delay ~ myblocks ~ generators ~ fullchain ~ briefchain ~ diffchain ~ timechain ~ allblocks ~ txCountchain ~ txchain
+    infoRoute ~ chain ~ delay ~ myblocks ~ generators ~ fullchain ~ briefchain   ~ allblocks ~ txchain
   }
 
   def delay: Route = {
@@ -101,27 +101,6 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     }
   }
 
-  def diffchain: Route = (get & path("diffchain")) {
-    withNodeView { view =>
-      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
-        b => s"${encoder.encodeId(b.id).substring(0,6)} (${view.history.storage.getPoWDifficulty(Some(b.id)).toString})"
-      }
-      ApiResponse("history" -> fc.mkString(" <- "))
-    }
-  }
-
-  def timechain: Route = (get & path("timechain")) {
-    withNodeView { view =>
-      val lastBlocks = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock)
-      val timestamps = Array(1481110008516L)++ lastBlocks.map { b => b.timestamp}
-      val fc = lastBlocks.zipWithIndex.map {
-        case (b,i) => s"${encoder.encodeId(b.id).substring(0,6)} (${view.history.storage.getPoWDifficulty(Some(b.id)).toString};" +
-          s"${timestamps(i+1)-timestamps(i)})"
-      }
-      ApiResponse("history" -> fc.mkString(" <- "))
-    }
-  }
-
   def allblocks: Route = (get & path("allblocks")) {
     withNodeView { view =>
       val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
@@ -136,14 +115,7 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     }
   }
 
-  def txCountchain: Route = (get & path("txcountchain")) {
-    withNodeView { view =>
-      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
-        b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.txs.length})"
-      }
-      ApiResponse("history" -> fc.mkString(" <- "))
-    }
-  }
+
 
   def txchain: Route = (get & path("txchain")) {
     withNodeView { view =>
@@ -154,4 +126,5 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
       ApiResponse(fc)
     }
   }
+
 }
