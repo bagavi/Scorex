@@ -61,8 +61,12 @@ case class SimpleBoxTransactionPrism(from: IndexedSeq[(PublicKey25519Proposition
   override def toString: String = s"SimpleBoxTransactionPrism(${this.asJson.noSpaces})"
 
   lazy val semanticValidity: Try[Unit] = Try {
+    require(from.size >0, s"Number of senders = ${from.size}")
     require(from.size == signatures.size)
-    require(to.forall(_._2 >= 0))
+    to.zipWithIndex.foreach{ case(tx, i) => require(tx._2>=0, s"Value of tx number ${i} is ${tx._2}." +
+                                                              s" Total recipients ${to.length}") }
+//    require(to.forall(_._2 >= 0), s"Total txs ${to.length}." +
+//      s"Problem: ${to.zipWithIndex.forall{ case(a, i) => if (a._2<0) i.toString + ";" + a._2.toString} }")
     require(fee >= 0)
     require(timestamp >= 0)
     require(boxIdsToOpen.map(to => ByteArrayWrapper(to)).distinct.size == boxIdsToOpen.size)
@@ -122,7 +126,7 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
     val amount = to.map(_._2.toLong).sum
 
     val from: IndexedSeq[(PrivateKey25519, Nonce, Value)] = scala.util.Random.shuffle(
-        w.boxes() .filter(b => !boxesIdsToExclude.exists(id => java.util.Arrays.equals(id, b.box.id)))
+        w.boxes().filter(b => !boxesIdsToExclude.exists(id => java.util.Arrays.equals(id, b.box.id)))
     )
       .takeWhile { b =>
       s = s + b.box.value
@@ -132,10 +136,14 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
     }.toIndexedSeq
     val canSend = from.map(_._3.toLong).sum
     // TODO: fixme, What should we do if `w.publicKeys` is empty?
-    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
-    val charge: (PublicKey25519Proposition, Value) = (w.publicKeys.head, Value @@ (canSend - amount - fee))
 
-    val outputs: IndexedSeq[(PublicKey25519Proposition, Value)] = (to :+ charge).toIndexedSeq
+    // Sending the change back to a random key of the sender
+    val senderPubKeys = w.publicKeys
+    val randomPosition = scala.util.Random.nextInt(senderPubKeys.size)
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
+    val changeTx: (PublicKey25519Proposition, Value) = (senderPubKeys.toVector(randomPosition), Value @@ (canSend - amount - fee))
+
+    val outputs: IndexedSeq[(PublicKey25519Proposition, Value)] = (to :+ changeTx).toIndexedSeq
 
     require(from.map(_._3.toLong).sum - outputs.map(_._2.toLong).sum == fee)
 

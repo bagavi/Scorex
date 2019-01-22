@@ -50,7 +50,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
           val txNonces = tx.from.map{case (_ , nonce ) => nonce}
           val collectedNonces = collected.flatMap(_.from).map{case (_ , nonce ) => nonce}
           if (view.state.validate(tx).isSuccess &&
-            //ToDo: Vivek: I have edited the
+            //ToDo: Vivek: I have edited this. To fix later
             //tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id)))
             txNonces.forall(nonce => !collectedNonces.contains(nonce))) collected :+ tx
         else collected
@@ -114,7 +114,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val txs = pmi.txs
 
         val p = Promise[Option[PowBlock]]()
-        log.info(s"Starting new block mining on ${bestPowBlock.encodedId}")
+        log.info(s"Mining on ${bestPowBlock.encodedId}")
         cancellableOpt = Some(Cancellable.run() { status =>
           Future {
             var foundBlock: Option[PowBlock] = None

@@ -66,7 +66,7 @@ class PrismV1App(val settingsFilename: String) extends Application {
   if (settings.network.nodeName.startsWith("generatorNode")) {
     log.info("Starting transactions generation")
     val generator: ActorRef = SimpleBoxTransactionPrismGeneratorRef(nodeViewHolderRef)
-    generator ! StartGeneration(1 seconds)
+    generator ! StartGeneration(hybridSettings.mining.txGenerationRate)
   }
 }
 

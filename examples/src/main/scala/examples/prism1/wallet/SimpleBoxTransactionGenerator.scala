@@ -46,10 +46,10 @@ class SimpleBoxTransactionPrismGenerator(viewHolderRef: ActorRef)(implicit ec: E
     case gi: GeneratorInfo =>
       gi.tx match {
         case Success(tx) =>
-          log.info(s"Local tx with with ${tx.from.size} inputs, ${tx.to.size} outputs. Valid: ${tx.semanticValidity}")
+          log.debug(s"Local tx: ${tx.from.size} inputs, ${tx.to.size} outputs. Valid: ${tx.semanticValidity}")
           viewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](tx)
         case Failure(e) =>
-          e.printStackTrace()
+//          e.printStackTrace()
       }
   }
 
@@ -59,11 +59,11 @@ class SimpleBoxTransactionPrismGenerator(viewHolderRef: ActorRef)(implicit ec: E
     if (Random.nextInt(100) == 1) ex.clear()
 
     val pubkeys = wallet.publicKeys.toSeq
-    while (wallet.publicKeys.toSeq.size < 1000) wallet.generateNewSecret()
-    val recipients = scala.util.Random.shuffle(pubkeys).take(1)
-      .map(r => (r, Value @@ (1 + Random.nextInt(10).toLong)))
-    val tx = SimpleBoxTransactionPrism.create(wallet, recipients, 0, ex)
-//    tx.map(t => t.boxIdsToOpen.foreach(id => ex += id))
+    while (wallet.publicKeys.toSeq.size < 100) wallet.generateNewSecret()
+    val recipients = scala.util.Random.shuffle(pubkeys).take(Random.nextInt(4))
+      .map(r => (r, Value @@ (1 + Random.nextInt(5).toLong)))
+    val tx = SimpleBoxTransactionPrism.create(wallet, recipients, 1 + Random.nextInt(2), ex)
+    tx.map(t => t.boxIdsToOpen.foreach(id => ex += id))
     tx
   }
 }

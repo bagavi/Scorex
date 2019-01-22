@@ -154,6 +154,4 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
       ApiResponse(fc)
     }
   }
-
-
 }

@@ -29,6 +29,7 @@ case class HybridMiningSettings(offlineGeneration: Boolean,
                                 rParamX10: Int,
                                 initialDifficulty: BigInt,
                                 blockNetworkTransmissionDelay: FiniteDuration,
+                                txGenerationRate: FiniteDuration,
                                 minerNumber: String) {
   lazy val MaxTarget = BigInt(1, Array.fill(32)(Byte.MinValue))
   lazy val GenesisParentId = bytesToId(Array.fill(32)(0: Byte))
