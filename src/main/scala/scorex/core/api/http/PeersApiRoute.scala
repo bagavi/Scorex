@@ -8,7 +8,7 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 import io.circe.{Encoder, Json}
 import scorex.core.api.http.PeersApiRoute.{BlacklistedPeers, PeerInfoResponse}
-import scorex.core.network.NetworkController.ReceivableMessages.{ConnectTo, GetConnectedPeers}
+import scorex.core.network.NetworkController.ReceivableMessages.{ConnectTo, DisconnectFromAddr, GetConnectedPeers}
 import scorex.core.network.peer.PeerInfo
 import scorex.core.network.peer.PeerManager.ReceivableMessages.{GetAllPeers, GetBlacklistedPeers}
 import scorex.core.settings.RESTApiSettings
@@ -22,7 +22,7 @@ case class PeersApiRoute(peerManager: ActorRef,
                          override val settings: RESTApiSettings)
                         (implicit val context: ActorRefFactory, val ec: ExecutionContext) extends ApiRoute {
 
-  override lazy val route: Route = pathPrefix("peers") { allPeers ~ connectedPeers ~ blacklistedPeers ~ connect }
+  override lazy val route: Route = pathPrefix("peers") { allPeers ~ connectedPeers ~ blacklistedPeers ~ connect ~ disconnect}
 
   def allPeers: Route = (path("all") & get) {
     val result = askActor[Map[InetSocketAddress, PeerInfo]](peerManager, GetAllPeers).map {
@@ -63,6 +63,18 @@ case class PeersApiRoute(peerManager: ActorRef,
     }
   }
 
+  def disconnect: Route = (path("disconnect") & post & withAuth & entity(as[Json])) { json =>
+    val maybeAddress = json.asString.flatMap(addressAndPortRegexp.findFirstMatchIn)
+    maybeAddress match {
+      case None => ApiError.BadRequest
+      case Some(addressAndPort) =>
+        val host = InetAddress.getByName(addressAndPort.group(1))
+        val port = addressAndPort.group(2).toInt
+        networkController ! DisconnectFromAddr(new InetSocketAddress(host, port))
+        ApiResponse.OK
+    }
+  }
+
   def blacklistedPeers: Route = (path("blacklisted") & get) {
     val result = askActor[Seq[String]](peerManager, GetBlacklistedPeers).map(BlacklistedPeers(_).asJson)
     ApiResponse(result)
@@ -95,4 +107,3 @@ object PeersApiRoute {
   implicit val encodeBlackListedPeers: Encoder[BlacklistedPeers] = deriveEncoder
 
 }
-

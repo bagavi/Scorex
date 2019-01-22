@@ -105,10 +105,23 @@ class NetworkController(settings: NetworkSettings,
       log.info(s"Disconnected from ${peer.remote}")
       peer.handlerRef ! CloseConnection
 
+    case DisconnectFromAddr(peerAddress) =>
+      connectionForPeerAddress(peerAddress).map {
+        peer =>
+          log.warn(s"Disconnected from ${peer.remote}")
+          peerManagerRef ! RemovePeer(peer.remote)
+          peer.handlerRef ! CloseConnection
+          connections -= peer.remote
+          outgoing -= peer.remote
+        //TODO check this
+      }
+
+
+
     case Blacklist(peer) =>
       peer.handlerRef ! PeerConnectionHandler.ReceivableMessages.Blacklist
-      // todo: the following message might become unnecessary if we refactor PeerManager to automatically
-      // todo: remove peer from `connectedPeers` on receiving `AddToBlackList` message.
+    // todo: the following message might become unnecessary if we refactor PeerManager to automatically
+    // todo: remove peer from `connectedPeers` on receiving `AddToBlackList` message.
 
     case Connected(remote, local) =>
       val connection = sender()
@@ -126,9 +139,9 @@ class NetworkController(settings: NetworkSettings,
       outgoing -= c.remoteAddress
       f.cause match {
         case Some(t) =>
-          log.info("Failed to connect to : " + c.remoteAddress, t)
+          log.warn("Failed to connect to : " + c.remoteAddress, t)
         case None =>
-          log.info("Failed to connect to : " + c.remoteAddress)
+          log.warn("Failed to connect to : " + c.remoteAddress)
       }
 
     case Terminated(ref) =>
@@ -283,7 +296,7 @@ class NetworkController(settings: NetworkSettings,
     */
   private def connectionForHandler(handler: ActorRef) = {
     connections.values.find { connectedPeer =>
-       connectedPeer.handlerRef == handler
+      connectedPeer.handlerRef == handler
     }
   }
 
@@ -295,7 +308,7 @@ class NetworkController(settings: NetworkSettings,
   private def connectionForPeerAddress(peerAddress: InetSocketAddress) = {
     connections.values.find { connectedPeer =>
       connectedPeer.remote == peerAddress ||
-      connectedPeer.peerInfo.exists(peerInfo => getPeerAddress(peerInfo).contains(peerAddress))
+        connectedPeer.peerInfo.exists(peerInfo => getPeerAddress(peerInfo).contains(peerAddress))
     }
   }
 
@@ -345,7 +358,7 @@ class NetworkController(settings: NetworkSettings,
 
       case None =>
         if (!localAddr.isSiteLocalAddress && !localAddr.isLoopbackAddress
-            && localSocketAddress.getPort == settings.bindAddress.getPort) {
+          && localSocketAddress.getPort == settings.bindAddress.getPort) {
           Some(localSocketAddress)
         } else {
           val listenAddrs = NetworkUtils.getListenAddresses(settings.bindAddress)
@@ -391,6 +404,7 @@ object NetworkController {
     case object ShutdownNetwork
     case class ConnectTo(peer: PeerInfo)
     case class DisconnectFrom(peer: ConnectedPeer)
+    case class DisconnectFromAddr(peerAddress: InetSocketAddress)
     case class Blacklist(peer: ConnectedPeer)
     case object GetConnectedPeers
   }
