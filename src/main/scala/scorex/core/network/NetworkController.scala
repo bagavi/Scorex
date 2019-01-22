@@ -105,19 +105,6 @@ class NetworkController(settings: NetworkSettings,
       log.info(s"Disconnected from ${peer.remote}")
       peer.handlerRef ! CloseConnection
 
-    case DisconnectFromAddr(peerAddress) =>
-      connectionForPeerAddress(peerAddress).map {
-        peer =>
-          log.warn(s"Disconnected from ${peer.remote}")
-          peerManagerRef ! RemovePeer(peer.remote)
-          peer.handlerRef ! CloseConnection
-          connections -= peer.remote
-          outgoing -= peer.remote
-          //TODO check this
-      }
-
-
-
     case Blacklist(peer) =>
       peer.handlerRef ! PeerConnectionHandler.ReceivableMessages.Blacklist
       // todo: the following message might become unnecessary if we refactor PeerManager to automatically
@@ -139,9 +126,9 @@ class NetworkController(settings: NetworkSettings,
       outgoing -= c.remoteAddress
       f.cause match {
         case Some(t) =>
-          log.warn("Failed to connect to : " + c.remoteAddress, t)
+          log.info("Failed to connect to : " + c.remoteAddress, t)
         case None =>
-          log.warn("Failed to connect to : " + c.remoteAddress)
+          log.info("Failed to connect to : " + c.remoteAddress)
       }
 
     case Terminated(ref) =>
@@ -404,7 +391,6 @@ object NetworkController {
     case object ShutdownNetwork
     case class ConnectTo(peer: PeerInfo)
     case class DisconnectFrom(peer: ConnectedPeer)
-    case class DisconnectFromAddr(peerAddress: InetSocketAddress)
     case class Blacklist(peer: ConnectedPeer)
     case object GetConnectedPeers
   }
