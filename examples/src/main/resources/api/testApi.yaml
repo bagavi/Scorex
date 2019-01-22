@@ -222,6 +222,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
+  /peers/disconnect:
+    post:
+      summary: Disconnect address in peers list, but the address keeps in the list
+      operationId: connectionForPeerAddress
+      tags:
+        - peers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+              example: 127.0.0.1:9084
+      responses:
+        200:
+          description: Attempt to disconnect to the peer
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
   /peers/blacklisted:
     get:
       summary: Get blacklisted peers
