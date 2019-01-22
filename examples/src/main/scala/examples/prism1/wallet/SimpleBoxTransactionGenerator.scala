@@ -59,11 +59,11 @@ class SimpleBoxTransactionPrismGenerator(viewHolderRef: ActorRef)(implicit ec: E
     if (Random.nextInt(100) == 1) ex.clear()
 
     val pubkeys = wallet.publicKeys.toSeq
-    if (pubkeys.size < 10) wallet.generateNewSecret()
-    val recipients = scala.util.Random.shuffle(pubkeys).take(Random.nextInt(pubkeys.size))
-      .map(r => (r, Value @@ Random.nextInt(100).toLong))
-    val tx = SimpleBoxTransactionPrism.create(wallet, recipients, Random.nextInt(100), ex)
-    tx.map(t => t.boxIdsToOpen.foreach(id => ex += id))
+    while (wallet.publicKeys.toSeq.size < 1000) wallet.generateNewSecret()
+    val recipients = scala.util.Random.shuffle(pubkeys).take(1)
+      .map(r => (r, Value @@ (1 + Random.nextInt(10).toLong)))
+    val tx = SimpleBoxTransactionPrism.create(wallet, recipients, 0, ex)
+//    tx.map(t => t.boxIdsToOpen.foreach(id => ex += id))
     tx
   }
 }
