@@ -2,7 +2,7 @@ package examples.prism1.api.http
 
 import akka.actor.{ActorRef, ActorRefFactory}
 import akka.http.scaladsl.server.Route
-import examples.commons.SimpleBoxTransactionMemPool
+import examples.commons.{SimpleBoxTransactionMemPool, SimpleBoxTransactionPrism}
 import examples.prism1.blocks.{HybridBlock, PowBlock}
 import examples.prism1.history.HybridHistory
 import examples.prism1.state.HBoxStoredState
@@ -22,7 +22,7 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     with ScorexEncoding {
 
   override val route: Route = (pathPrefix("debug") & withCors) {
-    infoRoute ~ chain ~ delay ~ myblocks ~ generators ~ fullchain ~ briefchain ~ diffchain ~ timechain ~ allblocks
+    infoRoute ~ chain ~ delay ~ myblocks ~ generators ~ fullchain ~ briefchain ~ diffchain ~ timechain ~ allblocks ~ txCountchain ~ txchain
   }
 
   def delay: Route = {
@@ -135,4 +135,25 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
       ApiResponse(fc ++ rbOrphan)
     }
   }
+
+  def txCountchain: Route = (get & path("txcountchain")) {
+    withNodeView { view =>
+      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
+        b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.txs.length})"
+      }
+      ApiResponse("history" -> fc.mkString(" <- "))
+    }
+  }
+
+  def txchain: Route = (get & path("txchain")) {
+    withNodeView { view =>
+      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).foldLeft(Seq[SimpleBoxTransactionPrism]()) {
+        (a,b) =>
+          a ++ b.txs
+      }
+      ApiResponse(fc)
+    }
+  }
+
+
 }

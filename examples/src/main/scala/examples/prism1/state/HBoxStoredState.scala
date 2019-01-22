@@ -100,11 +100,27 @@ object HBoxStoredState {
   def changes(mod: HybridBlock): Try[BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox]] = {
     mod match {
       case pb: PowBlock =>
-        val proposition: PublicKey25519Proposition = pb.generatorProposition
-        val nonce: Nonce = SimpleBoxTransactionPrism.nonceFromDigest(idToBytes(mod.id))
-        val value: Value = Value @@ 1L
-        val minerBox = PublicKey25519NoncedBox(proposition, nonce, value)
-        Success(BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox](Seq(Insertion(minerBox))))
+        Try {
+          // V: Is this the coinbase transaction?
+          val proposition: PublicKey25519Proposition = pb.generatorProposition
+          val nonce: Nonce = SimpleBoxTransactionPrism.nonceFromDigest(idToBytes(mod.id))
+          val value: Value = Value @@ 83L
+          val minerBox = PublicKey25519NoncedBox(proposition, nonce, value)
+
+          val initial = (Seq(): Seq[Array[Byte]], Seq(): Seq[PublicKey25519NoncedBox], 0L)
+
+          val (toRemove: Seq[ADKey@unchecked], toAdd: Seq[PublicKey25519NoncedBox], reward) =
+            pb.transactions.foldLeft(initial) { case ((sr, sa, f), tx) =>
+              ((sr ++ tx.boxIdsToOpen.toSet).map(id => ADKey @@ id), sa ++ tx.newBoxes.toSet, f + tx.fee)
+            }
+
+          @SuppressWarnings(Array("org.wartremover.warts.Product","org.wartremover.warts.Serializable"))
+          val ops: Seq[BoxStateChangeOperation[PublicKey25519Proposition, PublicKey25519NoncedBox]] =
+            toRemove.map(id => Removal[PublicKey25519Proposition, PublicKey25519NoncedBox](id)) ++
+              toAdd.map(b => Insertion[PublicKey25519Proposition, PublicKey25519NoncedBox](b)) ++
+              Seq(Insertion[PublicKey25519Proposition, PublicKey25519NoncedBox](minerBox))
+          BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox](ops)
+        }
     }
   }
 

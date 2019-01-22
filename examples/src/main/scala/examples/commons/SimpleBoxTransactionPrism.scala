@@ -121,8 +121,10 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
     var s = 0L
     val amount = to.map(_._2.toLong).sum
 
-    val from: IndexedSeq[(PrivateKey25519, Nonce, Value)] = w.boxes()
-      .filter(b => !boxesIdsToExclude.exists(id => java.util.Arrays.equals(id, b.box.id))).sortBy(_.createdAt).takeWhile { b =>
+    val from: IndexedSeq[(PrivateKey25519, Nonce, Value)] = scala.util.Random.shuffle(
+        w.boxes() .filter(b => !boxesIdsToExclude.exists(id => java.util.Arrays.equals(id, b.box.id)))
+    )
+      .takeWhile { b =>
       s = s + b.box.value
       s < amount + b.box.value
     }.flatMap { b =>

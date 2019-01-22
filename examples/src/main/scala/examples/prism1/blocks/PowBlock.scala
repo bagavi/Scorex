@@ -103,7 +103,7 @@ case class PowBlock(override val parentId: BlockId,
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
   //todo: coinbase transaction?
-  override def transactions: Seq[SimpleBoxTransactionPrism] = Seq()
+  override def transactions: Seq[SimpleBoxTransactionPrism] = txs
 }
 
 object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
