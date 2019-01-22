@@ -34,6 +34,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
 
   private var cancellableOpt: Option[Cancellable] = None
   private var mining = false
+  private val TransactionsPerBlock: Int = 50
   private val getRequiredData: GetDataFromCurrentView[HybridHistory,
     HBoxStoredState,
     HBoxWallet,
@@ -46,11 +47,16 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
         val bestPowBlock = view.history.bestPowBlock
          // Pick transactions from the view's mempool
         val txs = view.pool.take(TransactionsPerBlock).foldLeft(Seq[SimpleBoxTransactionPrism]()) { case (collected, tx) =>
-        if (view.state.validate(tx).isSuccess &&
-          tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id))) collected :+ tx
+          val txNonces = tx.from.map{case (_ , nonce ) => nonce}
+          val collectedNonces = collected.flatMap(_.from).map{case (_ , nonce ) => nonce}
+          if (view.state.validate(tx).isSuccess &&
+            //ToDo: Vivek: I have edited the
+            //tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id)))
+            txNonces.forall(nonce => !collectedNonces.contains(nonce))) collected :+ tx
         else collected
         }
 
+        log.info(s"${txs.size} out of ${view.pool.size} transactions added.")
         // TODO: fixme, What should we do if `view.vault.generateNewSecret().publicKeys` is empty?
         @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
         val pubkey = view.vault.publicKeys.headOption getOrElse view.vault.generateNewSecret().publicKeys.head
@@ -164,7 +170,6 @@ object PowMiner extends App {
                              txs: Seq[SimpleBoxTransactionPrism])
 
   }
-  private val TransactionsPerBlock: Int = 50
   def powIteration(parentId: BlockId,
                    difficulty: BigInt,
                    settings: HybridMiningSettings,
