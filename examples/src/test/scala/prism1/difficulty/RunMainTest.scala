@@ -30,7 +30,8 @@ class RunMainTest extends PropSpec {
     val blockStorage1 = new LSMStore(new File(dataDir1 + "/blocks"), maxJournalEntryCount = 10000)
     val historyStorage1 = new HistoryStorage(blockStorage1, hybridSettings1.mining)
     val hybridHistory1 = new HybridHistory(historyStorage1, hybridSettings1.mining, validators, None, new NetworkTimeProvider(hybridSettings1.scorexSettings.ntp))
-    val minerIds1 = hybridHistory1.lastPowBlocks(Int.MaxValue, hybridHistory1.bestPowBlock).map(_.minerId).toSet
+    val minerIds1 = hybridHistory1.lastPowBlocks(Int.MaxValue, hybridHistory1.bestPowBlock).map(_.minerId)
+    val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
     val ids1 = hybridHistory1.lastPowBlocks(Int.MaxValue, hybridHistory1.bestPowBlock).map(_.id)
 
 
@@ -40,23 +41,23 @@ class RunMainTest extends PropSpec {
     val blockStorage2 = new LSMStore(new File(dataDir2 + "/blocks"), maxJournalEntryCount = 10000)
     val historyStorage2 = new HistoryStorage(blockStorage2, hybridSettings2.mining)
     val hybridHistory2 = new HybridHistory(historyStorage2, hybridSettings2.mining, validators, None, new NetworkTimeProvider(hybridSettings2.scorexSettings.ntp))
-    val minerIds2 = hybridHistory2.lastPowBlocks(Int.MaxValue, hybridHistory2.bestPowBlock).map(_.minerId).toSet
+    val minerIds2 = hybridHistory2.lastPowBlocks(Int.MaxValue, hybridHistory2.bestPowBlock).map(_.minerId)
+    val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
     val ids2 = hybridHistory2.lastPowBlocks(Int.MaxValue, hybridHistory2.bestPowBlock).map(_.id)
 
-    val b1 = ids1.lastOption match {
-      case Some(id) => ids2.contains(id)
-      case _ => false
-    }
-    val b2 = ids2.lastOption match {
-        case Some(id) => ids1.contains(id)
-        case _ => false
-    }
-    assert(b1 || b2)
-    assert(minerIds1.contains(app1.hybridSettings.mining.minerId))
-    assert(minerIds1.contains(app2.hybridSettings.mining.minerId))
-    assert(minerIds2.contains(app1.hybridSettings.mining.minerId))
-    assert(minerIds2.contains(app2.hybridSettings.mining.minerId))
-
+    val ids1str = ids1.mkString
+    val ids2str = ids2.mkString
+    assert(ids1str.startsWith(ids2str) || ids2str.startsWith(ids1str))
+    assert(minerIdMap1.contains(app1.hybridSettings.mining.minerId))
+    assert(minerIdMap1.contains(app2.hybridSettings.mining.minerId))
+    assert(minerIdMap2.contains(app1.hybridSettings.mining.minerId))
+    assert(minerIdMap2.contains(app2.hybridSettings.mining.minerId))
+    val count11 = minerIdMap1.getOrElse(app1.hybridSettings.mining.minerId, 0)
+    val count12 = minerIdMap1.getOrElse(app2.hybridSettings.mining.minerId, 0)
+    val count21 = minerIdMap2.getOrElse(app1.hybridSettings.mining.minerId, 0)
+    val count22 = minerIdMap2.getOrElse(app2.hybridSettings.mining.minerId, 0)
+    println(s"chain of node1: miner1 ($count11), miner 2 ($count12)")
+    println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
 //    val url = s"curl -s -X GET --header 'Accept: application/json' 'http://${app1.settings.network.bindAddress}/debug/allblocks'"
 //    val url = s"http://${app1.settings.restApi.bindAddress.toString.stripPrefix("/")}/debug/allblocks"
 //    val allblocks1 = scala.io.Source.fromURL(url).mkString
