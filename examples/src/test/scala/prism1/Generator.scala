@@ -18,6 +18,7 @@ import scorex.util.bytesToId
 import scala.util.Random
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 object Generator {
   type SI = HybridSyncInfo
@@ -28,48 +29,13 @@ object Generator {
 
   def hybridHistoryGenerator(blockInterval: Int): HIS = {
     val rInPath = Random.nextInt()
-    val configText = s"""scorex {
-  dataDir = /tmp/scorex/tmp$rInPath/blockchain
-  logDir = /tmp/scorex/tmp$rInPath/log
-
-  restApi {
-    bindAddress = "127.0.0.1:9085"
-    api-key-hash = ""
-  }
-
-  network {
-    nodeName = "generatorNode1"
-    bindAddress = "127.0.0.1:9084"
-    knownPeers = []
-    agentName = "2-Hop"
-  }
-
-  miner {
-    offlineGeneration = true
-    targetBlockDelay = ${blockInterval}s
-    blockGenerationDelay = 100ms
-    rParamX10 = 8
-    initialDifficulty = 1
-    posAttachmentSize = 1
-    blockNetworkTransmissionDelay = 1s
-    minerNumber = "1"
-  }
-
-  wallet {
-    seed = "minerNode1"
-    password = "cookies"
-    walletDir = "/tmp/scorex/tmp$rInPath/wallet"
-  }
-}
-"""
-    val userConfigPath = "src/main/resources/tmpsettings.conf"
-    val bw = new BufferedWriter(new FileWriter(new File(userConfigPath)))
-    bw.write(configText)
-    bw.close()
-    //    val userConfigPath = "examples/src/main/resources/settings.conf" // whether use this or above path?
-    val hybridSettings = HybridSettings.read(Some(userConfigPath))
+    val userConfigPath = "src/main/resources/settings.conf" // whether use this or above path?
+    var hybridSettings = HybridSettings.read(Some(userConfigPath))
+    val mining = hybridSettings.mining.copy(blockGenerationDelay = blockInterval.seconds)
+    val walletSettings = hybridSettings.walletSettings.copy(walletDir = new File(s"/tmp/scorex/tmp$rInPath/wallet"))
+    val scorexSettings = hybridSettings.scorexSettings.copy(dataDir = new File(s"/tmp/scorex/tmp$rInPath/blockchain"), logDir = new File(s"/tmp/scorex/tmp$rInPath/log"))
+    hybridSettings = HybridSettings(mining, walletSettings, scorexSettings)
     val ntp = new NetworkTimeProvider(hybridSettings.scorexSettings.ntp)
-//    val ret = HybridNodeViewHolder.generateGenesisState(hybridSettings, ntp)
     val noValHistory = HybridHistory.readOrGenerateNoValidation(hybridSettings.scorexSettings, hybridSettings.mining, ntp)
     noValHistory
   }
