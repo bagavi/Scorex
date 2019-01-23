@@ -157,9 +157,9 @@ object PowBlock extends ScorexEncoding with ScorexLogging {
       "parentId" -> encoder.encodeId(pb.parentId).asJson,
       "timestamp" -> pb.timestamp.asJson,
       "nonce" -> pb.nonce.asJson,
-      "txscount" -> pb.txsCount.asJson,
-//      "txsHash" -> encoder.encode(pb.txsHash).asJson
-//      "minerId" -> encoder.encodeId(pb.minerId).asJson
+      "txsCount" -> pb.txsCount.asJson,
+      "txsHash" -> encoder.encode(pb.txsHash).asJson,
+      "minerId" -> encoder.encodeId(pb.minerId).asJson
     ).asJson
   }
 }
