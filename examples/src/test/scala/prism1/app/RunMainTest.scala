@@ -16,7 +16,7 @@ class RunMainTest extends PropSpec {
     app1.run()
     app2.run()
     Thread.sleep(180000)
-
+    
     val hybridHistory1 = Generator.hybridHistoryGenerator(app1.hybridSettings)
     val minerIds1 = HistoryTest.chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)

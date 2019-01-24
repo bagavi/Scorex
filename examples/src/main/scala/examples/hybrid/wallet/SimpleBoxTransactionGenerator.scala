@@ -56,7 +56,7 @@ class SimpleBoxTransactionGenerator(viewHolderRef: ActorRef)(implicit ec: Execut
   private val ex: ArrayBuffer[Array[Byte]] = ArrayBuffer()
 
   def generate(wallet: HBoxWallet): Try[SimpleBoxTransaction] = {
-    if (Random.nextInt(100) == 1) ex.clear()
+    if (Random.nextInt(1000) == 1) ex.clear()
 
     val pubkeys = wallet.publicKeys.toSeq
     if (pubkeys.size < 10) wallet.generateNewSecret()
