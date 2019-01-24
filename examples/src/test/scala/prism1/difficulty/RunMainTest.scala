@@ -6,44 +6,34 @@ import examples.prism1.PrismV1App
 import examples.prism1.history.{HistoryStorage, HybridHistory}
 import io.iohk.iodb.LSMStore
 import org.scalatest.PropSpec
+import prism1.Generator
+import prism1.history.HistoryTest
 import scorex.core.utils.NetworkTimeProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class RunMainTest extends PropSpec {
   /**
-    * Please rm data before test
+    * Please run configGenerator.sh first
     */
   property("See whether offlineGeneration=true will mine blocks(both of 2 nodes)") {
 
-    val app1 = new PrismV1App("src/main/resources/settings.conf")
-    val app2 = new PrismV1App("src/main/resources/settings2.conf")
+    val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
+    val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
     app1.run()
     app2.run()
     println("two nodes started, now sleeping for a long time")
-    Thread.sleep(180000)
+    Thread.sleep(90000)
 
-    val validators = Seq()      //we don't care about validation here
-
-    val hybridSettings1 = app1.hybridSettings
-    val dataDir1 = hybridSettings1.scorexSettings.dataDir
-    val blockStorage1 = new LSMStore(new File(dataDir1 + "/blocks"), maxJournalEntryCount = 10000)
-    val historyStorage1 = new HistoryStorage(blockStorage1, hybridSettings1.mining)
-    val hybridHistory1 = new HybridHistory(historyStorage1, hybridSettings1.mining, validators, None, new NetworkTimeProvider(hybridSettings1.scorexSettings.ntp))
-    val minerIds1 = hybridHistory1.lastPowBlocks(Int.MaxValue, hybridHistory1.bestPowBlock).map(_.minerId)
+    val hybridHistory1 = Generator.hybridHistoryGenerator(app1.hybridSettings)
+    val minerIds1 = HistoryTest.chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
-    val ids1 = hybridHistory1.lastPowBlocks(Int.MaxValue, hybridHistory1.bestPowBlock).map(_.id)
+    val ids1 = HistoryTest.chainIds(hybridHistory1)
 
-
-
-    val hybridSettings2 = app2.hybridSettings
-    val dataDir2 = hybridSettings2.scorexSettings.dataDir
-    val blockStorage2 = new LSMStore(new File(dataDir2 + "/blocks"), maxJournalEntryCount = 10000)
-    val historyStorage2 = new HistoryStorage(blockStorage2, hybridSettings2.mining)
-    val hybridHistory2 = new HybridHistory(historyStorage2, hybridSettings2.mining, validators, None, new NetworkTimeProvider(hybridSettings2.scorexSettings.ntp))
-    val minerIds2 = hybridHistory2.lastPowBlocks(Int.MaxValue, hybridHistory2.bestPowBlock).map(_.minerId)
+    val hybridHistory2 = Generator.hybridHistoryGenerator(app2.hybridSettings)
+    val minerIds2 = HistoryTest.chainMinerIds(hybridHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
-    val ids2 = hybridHistory2.lastPowBlocks(Int.MaxValue, hybridHistory2.bestPowBlock).map(_.id)
+    val ids2 = HistoryTest.chainIds(hybridHistory2)
 
     val ids1str = ids1.mkString
     val ids2str = ids2.mkString
@@ -63,8 +53,8 @@ class RunMainTest extends PropSpec {
 //    val allblocks1 = scala.io.Source.fromURL(url).mkString
 //    println(allblocks1)
 //    println(app1.settings.restApi.bindAddress.toString.stripPrefix("/"))
-    blockStorage1.close()
-    blockStorage2.close()
+//    blockStorage1.close()
+//    blockStorage2.close()
   }
 
   //TODO: see whether offlineGeneration=false will mine

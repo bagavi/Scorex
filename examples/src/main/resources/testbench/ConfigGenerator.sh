@@ -13,21 +13,20 @@ rm -rf /tmp/scorex/*
 while read -r line || [[ -n "$line" ]]; do
     IFS=':, ' read -r -a array <<< "$line"
     if [ "${#array[@]}" -ge "1" ]; then
-        conf00="scorex {\n  dataDir = /tmp/scorex/data${array[0]}/blockchain\n logDir = /tmp/scorex/data${array[0]}/log\n\n restApi {\n bindAddress = \"127.0.0.${array[0]}:$((9081+4*${array[0]}))\"\n api-key-hash = \"\"\n}\n\n network {\n  nodeName = \"generatorNode${array[0]}\"\n bindAddress = \"127.0.0.${array[0]}:$((9080+4*${array[0]}))\"\n knownPeers = ["
+        conf00="scorex {\n dataDir = /tmp/scorex/data${array[0]}/blockchain\n logDir = /tmp/scorex/data${array[0]}/log\n\n restApi {\n bindAddress = \"127.0.0.${array[0]}:$((9081+4*${array[0]}))\"\n api-key-hash = \"\"\n}\n\nnetwork {\n nodeName = \"generatorNode${array[0]}\"\n bindAddress = \"127.0.0.${array[0]}:$((9080+4*${array[0]}))\"\n knownPeers = ["
         peers=""
         for peer in "${array[@]: 1}"; do
             printf -v peers "$peers, \"127.0.0.$peer:$((9080+4*$peer))\""
         done
         peers="${peers#,}"
-        conf01="]\n agentName = \"2-Hop\"\n}\n miner {\n offlineGeneration = "
+        conf01="]\n agentName = \"2-Hop\"\n}\nminer {\n offlineGeneration = "
         if [ "${array[0]}" -eq "1" ]; then
             booleanvalue="true"
         else
             booleanvalue="true"
         fi
         #offlineGeneration = true or false?
-        conf02="\n targetBlockDelay = 10s\n    blockGenerationDelay = 1000ms\n    rParamX10 = 8\n    initialDifficulty = 1\n
-    posAttachmentSize = 1\n    blockNetworkTransmissionDelay = 1s\n }\n wallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n }\n }\n"
+        conf02="\n targetBlockDelay = 2s\n blockGenerationDelay = 100ms\n rParamX10 = 8\n initialDifficulty = 1\n posAttachmentSize = 1\n blockNetworkTransmissionDelay = 5ms\n minerNumber = \"${array[0]}\"\n txGenerationRate = 100ms\n}\nwallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n}\n}\n"
         printf "$conf00$peers$conf01$booleanvalue$conf02" > "$my_dir/settings${array[0]}.conf"
     fi
 done < "$my_dir/$1"
