@@ -1,16 +1,9 @@
-package prism1.difficulty
-
-import java.io.File
+package prism1.app
 
 import examples.prism1.PrismV1App
-import examples.prism1.history.{HistoryStorage, HybridHistory}
-import io.iohk.iodb.LSMStore
 import org.scalatest.PropSpec
 import prism1.Generator
 import prism1.history.HistoryTest
-import scorex.core.utils.NetworkTimeProvider
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class RunMainTest extends PropSpec {
   /**
@@ -22,8 +15,7 @@ class RunMainTest extends PropSpec {
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
     app1.run()
     app2.run()
-    println("two apps are started, now waiting for a long time")
-    Thread.sleep(90000)
+    Thread.sleep(180000)
 
     val hybridHistory1 = Generator.hybridHistoryGenerator(app1.hybridSettings)
     val minerIds1 = HistoryTest.chainMinerIds(hybridHistory1)
@@ -48,14 +40,6 @@ class RunMainTest extends PropSpec {
     val count22 = minerIdMap2.getOrElse(app2.hybridSettings.mining.minerId, 0)
     println(s"chain of node1: miner1 ($count11), miner 2 ($count12)")
     println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
-//    val url = s"curl -s -X GET --header 'Accept: application/json' 'http://${app1.settings.network.bindAddress}/debug/allblocks'"
-//    val url = s"http://${app1.settings.restApi.bindAddress.toString.stripPrefix("/")}/debug/allblocks"
-//    val allblocks1 = scala.io.Source.fromURL(url).mkString
-//    println(allblocks1)
-//    println(app1.settings.restApi.bindAddress.toString.stripPrefix("/"))
-//    blockStorage1.close()
-//    blockStorage2.close()
   }
 
-  //TODO: see whether offlineGeneration=false will mine
 }
