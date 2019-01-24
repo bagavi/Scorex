@@ -70,7 +70,7 @@ case class StatsApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
   def txCountchain: Route = (get & path("txcountchain")) {
     withNodeView { view =>
       val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
-        b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.txs.length})"
+        b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.transactions.length})"
       }
       ApiResponse("history" -> fc.mkString(" <- "))
     }

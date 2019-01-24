@@ -78,11 +78,11 @@ case class PowBlock(override val parentId: BlockId,
                     override val timestamp: Block.Timestamp,
                     override val nonce: Long,
                     override val generatorProposition: PublicKey25519Proposition,
-                    val txs: Seq[SimpleBoxTransactionPrism],
+                    override val transactions: Seq[SimpleBoxTransactionPrism],
                     override val txsHash: Array[Byte],
                     override val minerId: ModifierId
                    )
-  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txs.length, txsHash, minerId )
+  extends PowBlockHeader(parentId, timestamp, nonce, generatorProposition, transactions.length, txsHash, minerId )
     with HybridBlock with ScorexLogging {
   override type M = PowBlock
 
@@ -92,18 +92,17 @@ case class PowBlock(override val parentId: BlockId,
 
   override lazy val modifierTypeId: ModifierTypeId = PowBlock.ModifierTypeId
 
-  lazy val txBytes = serializer.txBytes(txs)
+  lazy val txBytes = serializer.txBytes(transactions)
 
 //  override val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
 
-  val txCounts: Int =  txs.length
+  val txCounts: Int =  transactions.length
 
   lazy val header = new PowBlockHeader(parentId, timestamp, nonce, generatorProposition, txCounts, txsHash, minerId)
 
   override lazy val toString: String = s"PoWBlock(${this.asJson.noSpaces})"
 
   //todo: coinbase transaction?
-  override def transactions: Seq[SimpleBoxTransactionPrism] = txs
 }
 
 object PowBlockCompanion extends Serializer[PowBlock] with ScorexEncoding {
@@ -161,5 +160,18 @@ object PowBlock extends ScorexEncoding with ScorexLogging {
       "txsHash" -> encoder.encode(pb.txsHash).asJson,
       "minerId" -> encoder.encodeId(pb.minerId).asJson
     ).asJson
+  }
+
+  def create(parentId: BlockId,
+             timestamp: Block.Timestamp,
+             nonce: Long,
+             generatorProposition: PublicKey25519Proposition,
+             txs: Seq[SimpleBoxTransactionPrism],
+             txsHash: Array[Byte],
+             minerId: ModifierId): PowBlock = {
+    require(txsHash sameElements {
+      if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+    })
+    PowBlock(parentId,  timestamp, nonce, generatorProposition, txs, txsHash, minerId)
   }
 }

@@ -121,7 +121,7 @@ case class DebugApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     withNodeView { view =>
       val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).foldLeft(Seq[SimpleBoxTransactionPrism]()) {
         (a,b) =>
-          a ++ b.txs
+          a ++ b.transactions
       }
       ApiResponse(fc)
     }
