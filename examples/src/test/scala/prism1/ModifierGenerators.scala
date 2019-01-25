@@ -8,14 +8,10 @@ import examples.prism1.state.HBoxStoredState
 import io.iohk.iodb.ByteArrayWrapper
 import org.scalacheck.Gen
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
-import scorex.core.transaction.state.PrivateKey25519
 import scorex.core.versionToId
 import scorex.crypto.hash.Blake2b256
 import scorex.testkit.generators.{CoreGenerators, ModifierProducerTemplateItem, SynInvalid, Valid}
 import scorex.util.{ModifierId, bytesToId}
-
-import scala.collection.mutable
-import scala.util.Random
 
 @SuppressWarnings(Array("org.wartremover.warts.TraversableOps",
                         "org.wartremover.warts.IsInstanceOf",
@@ -36,6 +32,12 @@ trait ModifierGenerators {
     at <- attachGen
   } yield (tx, in, at)
 
+  /**
+    * for each parentId, generate a valid child powblock containing txs in state
+    * @param state
+    * @param parentIds
+    * @return
+    */
   def validPowBlocks(state: HBoxStoredState, parentIds: Seq[ModifierId]): Seq[PowBlock] = {
     val count = parentIds.size
     require(count >= 1)
@@ -78,7 +80,7 @@ trait ModifierGenerators {
     assert(txsGrouped.size == count)
 
     val genBox: PublicKey25519NoncedBox = stateBoxes.head
-    val proposition: PublicKey25519Proposition = propositionGen.sample.get
+    val proposition: PublicKey25519Proposition = genBox.proposition
 
     val fakeMinerId = bytesToId(Blake2b256("0"))
 
@@ -89,6 +91,11 @@ trait ModifierGenerators {
     }
   }
 
+  /**
+    * Generate a semantically valid block whose parent is the latest version
+    * @param state
+    * @return
+    */
   def semanticallyValidModifier(state: HBoxStoredState): PowBlock =
     validPowBlocks(state, Seq(versionToId(state.version))).head
 
@@ -109,6 +116,12 @@ trait ModifierGenerators {
     }
   }.sample.get
 
+  /**
+    * generate several syntactically valid blocks appending to the history. transactions in them are random.
+    * @param curHistory
+    * @param count
+    * @return
+    */
   def syntacticallyValidModifiers(curHistory: HybridHistory, count: Int): Seq[HybridBlock] =
     (1 to count).foldLeft(Seq[HybridBlock]()) { case (blocks, _) =>
       blocks ++ Seq(syntacticallyValidModifier(curHistory, blocks))
@@ -118,9 +131,19 @@ trait ModifierGenerators {
     case pow: PowBlock => pow.copy(parentId = bytesToId(hf(pow.parentId)))
   }
 
+  /**
+    * Generate syntactically invalid block. (don't see it is called anywhere)
+    * @param curHistory
+    * @return
+    */
   def syntacticallyInvalidModifier(curHistory: HybridHistory): HybridBlock =
     makeSyntacticallyInvalid(syntacticallyValidModifier(curHistory))
 
+  /**
+    * Generate semantically invalid block. (don't see it is called anywhere)
+    * @param state
+    * @return
+    */
   def semanticallyInvalidModifier(state: HBoxStoredState): PowBlock = {
     val powBlock: PowBlock = semanticallyValidModifier(state)
     powBlock.transactions.lastOption.map { lastTx =>
@@ -128,32 +151,49 @@ trait ModifierGenerators {
       val modifiedLast = lastTx.copy(from = modifiedFrom)
       powBlock.copy(transactions = powBlock.transactions.dropRight(1) :+ modifiedLast)
     }.getOrElse {
-      // TODO: if 0 txs in PowBlock, then it is semantically valid. how to invalid it?
-//      val modifiedGenerator = powBlock.generatorBox.copy(nonce = Nonce @@ (powBlock.generatorBox.nonce + 1))
-//      powBlock.copy(generatorBox = modifiedGenerator)
-      powBlock
+      // if 0 txs in PowBlock, then it is semantically valid. how to invalid it?
+      val tx = simpleBoxTransactionPrismGen.sample.get
+      val modifiedFrom = (tx.from.head._1, Nonce @@ (tx.from.head._2 + 1)) +: tx.from.tail
+      val modifiedLast = tx.copy(from = modifiedFrom)
+      powBlock.copy(transactions = Seq(modifiedLast))
     }
   }
 
+  /**
+    * Generate a block that is both syntactically and semantically valid. That is, a block has transactions in state, and append to history
+    * @param history
+    * @param state
+    * @return
+    */
   def totallyValidModifier(history: HybridHistory, state: HBoxStoredState): HybridBlock =
     syntacticallyValidModifier(history) match {
-      case powSyn: PowBlock => powSyn
+      case powSyn: PowBlock =>
+        val semBlock = semanticallyValidModifier(state)
+        powSyn.copy(transactions = semBlock.transactions, txsHash = semBlock.txsHash)
     }
 
+  /**
+    * Generate a sequence of blocks that are both syntactically and semantically valid.
+    * @param history
+    * @param state
+    * @return
+    */
   def totallyValidModifiers(history: HT, state: ST, count: Int): Seq[HybridBlock] = {
     require(count >= 1)
     val mods = syntacticallyValidModifiers(history, count)
 
-//    val parentIds = mods.filter(_.isInstanceOf[PowBlock]).map(_.id).toBuffer
+    val parentIds = mods.map(_.id)
 
-//    val powBlocks: mutable.Buffer[HybridBlock] = validPowBlocks(state, parentIds).toBuffer
+    val powBlocks: Seq[HybridBlock] = validPowBlocks(state, parentIds)//semantically valid blocks
 
-    val validMods: Seq[HybridBlock] = mods
+//    val validMods: Seq[HybridBlock] = mods
+
+    val validMods: Seq[(HybridBlock, HybridBlock)] = mods zip powBlocks
 
     validMods.foldLeft((Seq[HybridBlock](), history.bestPowId)){case ((blocks, bestPw), b) =>
       b match {
-        case pwb: PowBlock =>
-          val newPwb = pwb.copy(parentId = bestPw)
+        case (pwb1: PowBlock, pwb2: PowBlock) =>
+          val newPwb = pwb1.copy(parentId = bestPw, transactions = pwb2.transactions, txsHash = pwb2.txsHash)
           (blocks ++ Seq(newPwb), newPwb.id)
       }
     }._1

@@ -32,6 +32,11 @@ trait NodeViewHolderGenerators {
     def props(h: HT, s: ST): Props = Props(new NodeViewHolderForTests(h, s))
   }
 
+  /**
+    * Generate nodeViewHolderForTest and other things for test
+    * @param system
+    * @return
+    */
   def nodeViewHolder(implicit system: ActorSystem): (ActorRef, TestProbe, PM, ST, HT) = {
     @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     val h = historyGen.sample.get
