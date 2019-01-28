@@ -195,6 +195,7 @@ trait ModifierGenerators {
         case (pwb1: PowBlock, pwb2: PowBlock) =>
           val newPwb = pwb1.copy(parentId = bestPw, transactions = pwb2.transactions, txsHash = pwb2.txsHash)
           (blocks ++ Seq(newPwb), newPwb.id)
+        case _ => (blocks, bestPw)
       }
     }._1
   }.ensuring{blocks =>

@@ -122,6 +122,15 @@ trait Application extends ScorexLogging {
       System.exit(0)
     }
   }
+
+  def stopNotExit(): Unit = synchronized {
+    log.info("Stopping network services")
+    upnpGateway.foreach(_.deletePort(settings.network.bindAddress.getPort))
+    networkControllerRef ! ShutdownNetwork
+
+    log.info("Stopping actors (incl. block generator)")
+    actorSystem.terminate()
+  }
 }
 
 object Application {
