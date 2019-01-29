@@ -5,23 +5,40 @@ import examples.prism1.history.HybridHistory
 import examples.prism1.mining.HybridSettings
 import org.scalatest.PropSpec
 import prism1.Generator.randomPowBlockGenerator
-import prism1.{HistoryGenerators, StoreGenerators}
-import scorex.util.ModifierId
+import prism1.{HistoryGenerators, HybridGenerators, StoreGenerators}
+import scorex.crypto.hash.Blake2b256
+import scorex.util.{ModifierId, bytesToId}
 
 import scala.util.{Failure, Success}
 
-class HistoryTest extends PropSpec with HistoryGenerators with StoreGenerators {
-  val userConfigPath = "src/main/resources/settings.conf" // whether use this or above path?
+class HistoryTest extends PropSpec with HybridGenerators {
+//  val userConfigPath = "src/main/resources/settings.conf" // whether use this or above path?
 
-  override def settings: HybridSettings = HybridSettings.read(Some(userConfigPath))
+//  override val settings: HybridSettings = HybridSettings.read(Some(userConfigPath))
 
-  property("should get a history height==1") {
+  ignore("should get a history height==1") {
     @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     val hybridHistory: HybridHistory = historyGen.sample.get
     assert(hybridHistory.height == 1)
   }
 
-  property("longest chain should win") {
+  property("wrong parent id should fail") {
+    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
+    var hybridHistory: HybridHistory = historyGen.sample.get
+    val genesisBlock: PowBlock = hybridHistory.bestPowBlock
+    val t0 = genesisBlock.timestamp
+    var length = 1
+    for (i <- 1 to length) {
+      val block: PowBlock = randomPowBlockGenerator(bytesToId(Blake2b256(hybridHistory.bestPowId)), t0 + i * 1000)
+      hybridHistory.append(block) match {
+        case Success((history, progressInfo)) =>
+          hybridHistory = history
+        case Failure(e) =>
+          println(e)
+      }
+    }
+  }
+  ignore("longest chain should win") {
     @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     var hybridHistory: HybridHistory = historyGen.sample.get
     val genesisBlock: PowBlock = hybridHistory.bestPowBlock

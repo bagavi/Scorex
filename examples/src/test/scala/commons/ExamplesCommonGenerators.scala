@@ -56,4 +56,18 @@ trait ExamplesCommonGenerators extends CoreGenerators {
     from = fromBoxes
     to: IndexedSeq[(PublicKey25519Proposition, Value)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i, pGen).map(_.toIndexedSeq))
   } yield SimpleBoxTransaction(from, to, fee, timestamp)
+
+  def simpleBoxTransactionPrismGenCustomMakeBoxes(toBoxes: IndexedSeq[(PublicKey25519Proposition, Value)]): Gen[SimpleBoxTransactionPrism] = for {
+    fee <- positiveLongGen
+    timestamp <- positiveLongGen
+    from: IndexedSeq[(PrivateKey25519, Nonce)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i + 1, privGen).map(_.toIndexedSeq))
+    to = toBoxes
+  } yield SimpleBoxTransactionPrism(from, to, fee, timestamp)
+
+  def simpleBoxTransactionPrismGenCustomUseBoxes(fromBoxes: IndexedSeq[(PrivateKey25519, Nonce)]): Gen[SimpleBoxTransactionPrism] = for {
+    fee <- positiveLongGen
+    timestamp <- positiveLongGen
+    from = fromBoxes
+    to: IndexedSeq[(PublicKey25519Proposition, Value)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i, pGen).map(_.toIndexedSeq))
+  } yield SimpleBoxTransactionPrism(from, to, fee, timestamp)
 }

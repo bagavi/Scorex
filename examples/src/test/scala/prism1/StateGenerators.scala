@@ -10,15 +10,11 @@ import scorex.testkit.generators.CoreGenerators
 
 import scala.util.Random
 
-trait StateGenerators extends StoreGenerators with CoreGenerators{// this: HybridGenerators with CoreGenerators with StoreGenerators =>
+trait StateGenerators extends StoreGenerators with CoreGenerators{this: HybridGenerators with CoreGenerators with StoreGenerators =>
 
   private val valueSeed = 5000000
 
-  //move this from HybridGenerators to here. if we have HybridGenerators, we can remove it.
-  def privKey(value: Long): (PrivateKey25519, PublicKey25519Proposition) =
-    PrivateKey25519Companion.generateKeys(("secret_" + value).getBytes)
-
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
+    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   val stateGen: Gen[HBoxStoredState] =
     for {
       dir <- tempDirGen

@@ -17,8 +17,7 @@ import scorex.util.{ModifierId, bytesToId}
                         "org.wartremover.warts.IsInstanceOf",
                         "org.wartremover.warts.OptionPartial"))
 trait ModifierGenerators {
-  //this: HybridGenerators with CoreGenerators =>
-  this: StateGenerators with ExamplesCommonGenerators with CoreGenerators with HybridTypes=>
+  this: HybridGenerators with CoreGenerators =>
 
   private val hf = Blake2b256
 
