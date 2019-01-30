@@ -118,6 +118,8 @@ class HybridHistory(val storage: HistoryStorage,
           mod
 
         case None =>
+          // Gerui: try to throw an error since it should be an error!
+//          throw new RecoverableModifierError("Parent block not in history")
           log.warn(s"No parent block ${powBlock.parentId} in history")
           ProgressInfo[HybridBlock](None, Seq[HybridBlock](), Seq(), Seq())
       }
@@ -232,7 +234,7 @@ class HybridHistory(val storage: HistoryStorage,
   override def applicableTry(block: HybridBlock): Try[Unit] = {
     block match {
       case pwb: PowBlock if !contains(pwb.parentId) =>
-        Failure(new RecoverableModifierError("Parent block  not in history yet"))
+        Failure(new RecoverableModifierError("Parent block not in history yet"))
       case _ =>
         Success()
     }

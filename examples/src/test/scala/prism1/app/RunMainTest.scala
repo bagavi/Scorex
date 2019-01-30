@@ -9,7 +9,8 @@ class RunMainTest extends PropSpec {
   /**
     * Please run configGenerator.sh first
     */
-  ignore("See whether both of 2 nodes mine blocks") {
+  ignore("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+    " 2) both 2 nodes mine blocks") {
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
@@ -42,7 +43,8 @@ class RunMainTest extends PropSpec {
     println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
   }
 
-  property("See whether node B stops for some time and restart and synchronize the chain") {
+  property("Start 2 nodes, wait for 50s, shutdown one node, wait 20s, restart it, wait 50s. then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+    " 2) both 2 nodes mine blocks") {
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
