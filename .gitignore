@@ -37,3 +37,9 @@ Dockerfile
 sheet.scala
 examples/src/main/scala/examples/sigmastate/
 examples/lib/
+
+# logback.xml
+src/main/resources/swagger-ui/logback.xml
+
+#vim swap
+#*.swp

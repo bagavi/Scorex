@@ -36,7 +36,7 @@ trait HybridGenerators extends ExamplesCommonGenerators
 
   type ChangesGen = Gen[BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox]]
 
-  val userConfigPath = "src/main/resources/settings.conf" // whether use this or above path?
+  val userConfigPath = "src/main/resources/settings.conf"
   val originalSettings = HybridSettings.read(Some(userConfigPath))
   override val settings = originalSettings.copy(mining = originalSettings.mining.copy(targetBlockDelay = 3.seconds, initialDifficulty = 1))
 
