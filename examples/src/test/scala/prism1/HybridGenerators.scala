@@ -46,6 +46,7 @@ trait HybridGenerators extends ExamplesCommonGenerators
     pows <- Gen.nonEmptyListOf(pow).map(_.take(HybridSyncInfo.MaxLastPowBlocks))
   } yield HybridSyncInfo(answer, pows)
 
+  // Sign a random set of bytes
   lazy val signatureGen: Gen[Signature25519] = genBytes(Signature25519.SignatureSize)
     .map(g => Signature25519(Signature @@ g))
 
@@ -85,6 +86,7 @@ trait HybridGenerators extends ExamplesCommonGenerators
     nonce <- nonceGen
     value <- valueGen
   } yield PublicKey25519NoncedBox(proposition, nonce, value)
+
 
   lazy val noncedBoxWithKeyGen: Gen[(PublicKey25519NoncedBox, PrivateKey25519)] = for {
     pair <- key25519Gen
@@ -134,6 +136,7 @@ trait HybridGenerators extends ExamplesCommonGenerators
       BoxStateChanges[PublicKey25519Proposition, PublicKey25519NoncedBox](ops)
     }
   }
+
   //TODO Don't under this part
   def genValidTransactionPair(state: HBoxStoredState): Seq[SimpleBoxTransactionPrism] = {
     val keys = key25519Gen.apply(Gen.Parameters.default, Seed.random()).get

@@ -37,6 +37,9 @@ trait HistoryGenerators {
     minerId
     )
 
+  /*
+  Takes an empty generated database and adds a genesis block
+   */
   val historyGen: Gen[HybridHistory] = lsmStoreGen.map { blockStorage =>
     val storage = new HistoryStorage(blockStorage, settings.mining)
     //we don't care about validation here
