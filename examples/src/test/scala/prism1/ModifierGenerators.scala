@@ -53,6 +53,7 @@ trait ModifierGenerators {
     def filterOutForgedBoxes(in: (ByteArrayWrapper, ByteArrayWrapper)): Boolean = {
       //current problem with unstable nodeviewholder spec is caused by coinbase block which always has value 1
       //so for now we just won't use it
+      //Gerui: this seems not to affect the test, keep or remove it, both ok.
       PublicKey25519NoncedBoxSerializer.parseBytes(in._2.data).map(_.value).getOrElse(0L) > 1L
     }
 
