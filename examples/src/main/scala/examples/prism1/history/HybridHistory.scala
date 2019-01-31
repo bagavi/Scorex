@@ -119,9 +119,9 @@ class HybridHistory(val storage: HistoryStorage,
 
         case None =>
           // Gerui: try to throw an error since it should be an error!
-//          throw new RecoverableModifierError("Parent block not in history")
-          log.warn(s"No parent block ${powBlock.parentId} in history")
-          ProgressInfo[HybridBlock](None, Seq[HybridBlock](), Seq(), Seq())
+          throw new RecoverableModifierError("Parent block not in history")
+          //log.warn(s"No parent block ${powBlock.parentId} in history")
+          //ProgressInfo[HybridBlock](None, Seq[HybridBlock](), Seq(), Seq())
       }
     }
     // require(modifications.toApply.exists(_.id sameElements powBlock.id))

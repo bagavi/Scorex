@@ -42,4 +42,6 @@ examples/lib/
 src/main/resources/swagger-ui/logback.xml
 
 #vim swap
-#*.swp
+*.swp
+*.swo
+*~

@@ -96,7 +96,7 @@ trait ModifierGenerators {
   }
 
   /**
-    * Generate one semantically valid block whose parent is the latest version
+    * Generate one semantically valid block whose parent is the latest version converted to id. Latest version should be the id of the last (valid?) block that state has seen.
     * @param state
     * @return
     */
@@ -106,7 +106,9 @@ trait ModifierGenerators {
   def syntacticallyValidModifier(curHistory: HybridHistory): HybridBlock =
     syntacticallyValidModifier(curHistory, Seq())
 
-  // generate several syntactically valid blocks appending to blocks. transactions in them are random, so may be semantically invalid.
+  /**
+   * Generate one syntactically valid block appending to the last block (or the best in curHistory if blocks are empty. Transactions are random, so may be semantically invalid.
+   */
   def syntacticallyValidModifier(curHistory: HybridHistory, blocks: Seq[HybridBlock]): HybridBlock = {
     for {
       timestamp: Long <- positiveLongGen
@@ -122,7 +124,7 @@ trait ModifierGenerators {
   }.sample.get
 
   /**
-    * generate several syntactically valid blocks appending to the history. transactions in them are random, so may be semantically invalid.
+    * Generate several syntactically valid blocks appending to the history. transactions in them are random, so may be semantically invalid.
     * @param curHistory
     * @param count
     * @return
@@ -137,7 +139,7 @@ trait ModifierGenerators {
   }
 
   /**
-    * Generate syntactically invalid block.
+    * Generate syntactically invalid block by hashing its parentid.
     * @param curHistory
     * @return
     */
