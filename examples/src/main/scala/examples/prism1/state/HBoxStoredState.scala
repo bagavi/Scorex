@@ -51,9 +51,10 @@ case class HBoxStoredState(store: LSMStore, override val version: VersionTag) ex
   override def validate(mod: HPMOD): Try[Unit] = Try {
     mod match {
       case pwb: PowBlock =>
-        //coinbase transaction is generated implicitly when block is applied to state, no validation needed
+        //Gerui: original comment which is not true: coinbase transaction is generated implicitly when block is applied to state, no validation needed
         require((pwb.parentId == version) , s"Incorrect state version: ${encoder.encodeVersion(version)} " +
-          s"found, (${encoder.encodeId(pwb.parentId)} ||" )
+          s"found, (${encoder.encodeId(pwb.parentId)} expected" )
+        pwb.transactions.foreach(tx => validate(tx).get)
 
     }
   }.recoverWith{case t =>
