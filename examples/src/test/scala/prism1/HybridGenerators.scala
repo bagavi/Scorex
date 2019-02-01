@@ -38,7 +38,7 @@ trait HybridGenerators extends ExamplesCommonGenerators
 
   val userConfigPath = "src/main/resources/settings.conf"
   val originalSettings = HybridSettings.read(Some(userConfigPath))
-  override val settings = originalSettings.copy(mining = originalSettings.mining.copy(targetBlockDelay = 3.seconds, initialDifficulty = 1))
+  override val settings = originalSettings.copy(mining = originalSettings.mining.copy(targetBlockDelay = 3.seconds, initialDifficulty = 1, blockNetworkTransmissionDelay = 0.second))
 
   lazy val hybridSyncInfoGen: Gen[HybridSyncInfo] = for {
     answer <- Arbitrary.arbitrary[Boolean]
