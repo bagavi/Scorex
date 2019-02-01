@@ -12,7 +12,7 @@ while read -r line || [[ -n "$line" ]]; do
     IFS=':, ' read -r -a array <<< "$line"
     if [ "${#array[@]}" -ge "1" ]; then
 		mkdir -p "/tmp/scorex/data${array[0]}/log"
-		nohup sbt "; project examples; runMain examples.prism1.PrismV1App src/main/resources/testbench/settings${array[0]}.conf" > /tmp/scorex/data${array[0]}/log/stdout.data 2>&1 &
+		nohup sh -c 'sbt "; project examples; runMain examples.prism1.PrismV1App src/main/resources/testbench/settings$0.conf" | sed "s/\x1b\[[0-9;]*m//g" | cat > /tmp/scorex/data$0/log/stdout.data' "${array[0]}" > /dev/null 2>&1 &
 		echo "start ${array[0]}"
 		sleep 1
     fi
