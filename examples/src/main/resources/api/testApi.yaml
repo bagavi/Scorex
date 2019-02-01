@@ -318,3 +318,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+
+  /wallet/transfer:
+    post:
+      summary: Make a transaction
+      operationId: transfer
+      tags:
+        - wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: integer
+                recipient:
+                  type: string
+                fee:
+                  type: integer
+              example:
+                amount: 10
+                recipient: ede56a0c0df10af89afdab4a3cf1b5af9019af65367f64bde7aa259ab8f7d449
+                fee: 2
+      responses:
+        200:
+          description: The generated transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+

@@ -130,7 +130,7 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
     )
       .takeWhile { b =>
       s = s + b.box.value
-      s < amount + b.box.value
+      s < amount + b.box.value + fee //Gerui: add fee here to avoid shortage of tokens
     }.flatMap { b =>
       w.secretByPublicImage(b.box.proposition).map(s => (s, b.box.nonce, b.box.value))
     }.toIndexedSeq
@@ -142,6 +142,8 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
     val randomPosition = scala.util.Random.nextInt(senderPubKeys.size)
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
     val changeTx: (PublicKey25519Proposition, Value) = (senderPubKeys.toVector(randomPosition), Value @@ (canSend - amount - fee))
+
+    require(changeTx._2 >= 0)//Gerui: we don't need negative transaction to be created
 
     val outputs: IndexedSeq[(PublicKey25519Proposition, Value)] = (to :+ changeTx).toIndexedSeq
 
