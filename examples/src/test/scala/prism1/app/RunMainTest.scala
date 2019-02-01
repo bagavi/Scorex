@@ -1,14 +1,19 @@
 package prism1.app
 
 import examples.prism1.PrismV1App
+import examples.prism1.history.HybridHistory
+import examples.prism1.mining.HybridSettings
 import org.scalatest.PropSpec
-import prism1.Generator
-import prism1.history.HistoryTest
+import scorex.core.utils.NetworkTimeProvider
+import scorex.util.ModifierId
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class RunMainTest extends PropSpec {
   /**
     * Please run configGenerator.sh first
     */
+  import RunMainTest._
   ignore("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
     " 2) both 2 nodes mine blocks") {
 
@@ -18,15 +23,15 @@ class RunMainTest extends PropSpec {
     app2.run()
     Thread.sleep(180000)
     
-    val hybridHistory1 = Generator.hybridHistoryGenerator(app1.hybridSettings)
-    val minerIds1 = HistoryTest.chainMinerIds(hybridHistory1)
+    val hybridHistory1 = hybridHistoryGenerator(app1.hybridSettings)
+    val minerIds1 = chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
-    val ids1 = HistoryTest.chainIds(hybridHistory1)
+    val ids1 = chainIds(hybridHistory1)
 
-    val hybridHistory2 = Generator.hybridHistoryGenerator(app2.hybridSettings)
-    val minerIds2 = HistoryTest.chainMinerIds(hybridHistory2)
+    val hybridHistory2 = hybridHistoryGenerator(app2.hybridSettings)
+    val minerIds2 = chainMinerIds(hybridHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
-    val ids2 = HistoryTest.chainIds(hybridHistory2)
+    val ids2 = chainIds(hybridHistory2)
 
     val ids1str = ids1.mkString
     val ids2str = ids2.mkString
@@ -61,15 +66,15 @@ class RunMainTest extends PropSpec {
     app2restart.run()
     Thread.sleep(50000)
 
-    val hybridHistory1 = Generator.hybridHistoryGenerator(app1.hybridSettings)
-    val minerIds1 = HistoryTest.chainMinerIds(hybridHistory1)
+    val hybridHistory1 = hybridHistoryGenerator(app1.hybridSettings)
+    val minerIds1 = chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
-    val ids1 = HistoryTest.chainIds(hybridHistory1)
+    val ids1 = chainIds(hybridHistory1)
 
-    val hybridHistory2 = Generator.hybridHistoryGenerator(app2restart.hybridSettings)
-    val minerIds2 = HistoryTest.chainMinerIds(hybridHistory2)
+    val hybridHistory2 = hybridHistoryGenerator(app2restart.hybridSettings)
+    val minerIds2 = chainMinerIds(hybridHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
-    val ids2 = HistoryTest.chainIds(hybridHistory2)
+    val ids2 = chainIds(hybridHistory2)
 
     val ids1str = ids1.mkString
     val ids2str = ids2.mkString
@@ -86,4 +91,22 @@ class RunMainTest extends PropSpec {
     println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
   }
 
+}
+
+object RunMainTest {
+  def hybridHistoryGenerator(hybridSettings: HybridSettings): HybridHistory = {
+    HybridHistory.readOrGenerateNoValidation(hybridSettings.scorexSettings, hybridSettings.mining, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
+  }
+
+  def hybridHistoryGenerator(userConfigPath: String): HybridHistory = {
+    val hybridSettings = HybridSettings.read(Some(userConfigPath))
+    hybridHistoryGenerator(hybridSettings)
+  }
+  def chainIds(hybridHistory: HybridHistory): Seq[ModifierId] = {
+    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.id)
+  }
+
+  def chainMinerIds(hybridHistory: HybridHistory): Seq[ModifierId] = {
+    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.minerId)
+  }
 }

@@ -1,17 +1,15 @@
-package prism1.history
+package prism1.deprecated
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import examples.prism1.blocks.{HybridBlock, PowBlock, PowBlockCompanion}
+import examples.prism1.blocks.PowBlock
 import examples.prism1.history.{HistoryStorage, HybridHistory}
 import examples.prism1.mining.HybridSettings
-import io.iohk.iodb.{ByteArrayWrapper, LSMStore}
+import io.iohk.iodb.LSMStore
 import org.scalatest.PropSpec
 import scorex.core.utils.NetworkTimeProvider
-import scorex.util.idToBytes
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Try}
 
 class ReadJournal extends PropSpec{
   /**

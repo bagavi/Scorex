@@ -1,11 +1,10 @@
-package prism1.history
+package prism1.deprecated
 
 import examples.prism1.blocks.PowBlock
 import examples.prism1.history.HybridHistory
-import examples.prism1.mining.HybridSettings
 import org.scalatest.PropSpec
-import prism1.Generator.randomPowBlockGenerator
-import prism1.{HistoryGenerators, HybridGenerators, StoreGenerators}
+import Generator.randomPowBlockGenerator
+import prism1.HybridGenerators
 import scorex.crypto.hash.Blake2b256
 import scorex.util.{ModifierId, bytesToId}
 
@@ -100,11 +99,5 @@ class HistoryTest extends PropSpec with HybridGenerators {
   }
 }
 object HistoryTest {
-  def chainIds(hybridHistory: HybridHistory): Seq[ModifierId] = {
-    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.id)
-  }
 
-  def chainMinerIds(hybridHistory: HybridHistory): Seq[ModifierId] = {
-    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.minerId)
-  }
 }
