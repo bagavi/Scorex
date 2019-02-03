@@ -24,8 +24,7 @@ class HLocalInterface(viewHolderRef: ActorRef,
   override def receive: Receive = {
     case RollbackFailed => log.error("Too deep rollback occurred!")
 
-    //stop PoW miner and start PoS forger if PoW block comes
-    //stop PoW forger and start PoW miner if PoS block comes
+    //start PoW miner to mine next block if a block comes
     case sems: SemanticallySuccessfulModifier[_] =>
       if (!block) {
         sems.modifier match {

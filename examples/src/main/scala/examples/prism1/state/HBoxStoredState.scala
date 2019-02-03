@@ -102,7 +102,7 @@ object HBoxStoredState {
     mod match {
       case pb: PowBlock =>
         Try {
-          // V: Is this the coinbase transaction?
+          // V: Is this the coinbase transaction? G: yes
           val proposition: PublicKey25519Proposition = pb.generatorProposition
           val nonce: Nonce = SimpleBoxTransactionPrism.nonceFromDigest(idToBytes(mod.id))
           val value: Value = Value @@ 83L

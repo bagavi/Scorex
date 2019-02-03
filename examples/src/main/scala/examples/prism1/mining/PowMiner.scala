@@ -50,10 +50,10 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
           val txNonces = tx.from.map{case (_ , nonce ) => nonce}
           val collectedNonces = collected.flatMap(_.from).map{case (_ , nonce ) => nonce}
           if (view.state.validate(tx).isSuccess &&
-            //ToDo: Vivek: I have edited this. To fix later
-            //tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id)))
+            //ToDo: Vivek: I have edited this. To fix later.
+//            tx.boxIdsToOpen.forall(id => !collected.flatMap(_.boxIdsToOpen).contains(id))) collected :+ tx
             txNonces.forall(nonce => !collectedNonces.contains(nonce))) collected :+ tx
-        else collected
+          else collected
         }
 
         log.info(s"${txs.size} out of ${view.pool.size} transactions added.")
@@ -128,7 +128,6 @@ class PowMiner(viewHolderRef: ActorRef, settings: HybridMiningSettings)(implicit
               }
             }
 //            log.info("Found new block!")
-
             p.success(foundBlock)
           }
         })

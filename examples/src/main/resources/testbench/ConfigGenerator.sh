@@ -23,10 +23,10 @@ while read -r line || [[ -n "$line" ]]; do
         if [ "${array[0]}" -eq "1" ]; then
             booleanvalue="true"
         else
-            booleanvalue="true"
+            booleanvalue="false"
         fi
         #offlineGeneration = true or false?
-        conf02="\n targetBlockDelay = 2s\n blockGenerationDelay = 100ms\n rParamX10 = 8\n initialDifficulty = 1\n posAttachmentSize = 1\n blockNetworkTransmissionDelay = 5ms\n minerNumber = \"${array[0]}\"\n txGenerationRate = 100ms\n}\nwallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n}\n}\n"
+        conf02="\n targetBlockDelay = 2s\n blockGenerationDelay = 100ms\n rParamX10 = 8\n initialDifficulty = 1\n posAttachmentSize = 1\n blockNetworkTransmissionDelay = 50ms\n minerNumber = \"${array[0]}\"\n txGenerationRate = 100ms\n}\nwallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n}\n}\n"
         printf "$conf00$peers$conf01$booleanvalue$conf02" > "$my_dir/settings${array[0]}.conf"
     fi
 done < "$my_dir/$1"

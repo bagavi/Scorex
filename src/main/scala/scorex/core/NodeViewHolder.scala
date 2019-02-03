@@ -102,10 +102,12 @@ trait NodeViewHolder[TX <: Transaction, PMOD <: PersistentNodeViewModifier]
             context.system.eventStream.publish(SuccessfulTransaction[TX](tx))
 
           case Failure(e) =>
+            e.printStackTrace()
             context.system.eventStream.publish(FailedTransaction[TX](tx, e))
         }
 
       case Some(e) =>
+        e.printStackTrace()
         context.system.eventStream.publish(FailedTransaction[TX](tx, e))
     }
   }
@@ -155,12 +157,14 @@ trait NodeViewHolder[TX <: Transaction, PMOD <: PersistentNodeViewModifier]
     val appliedTxs = blocksApplied.flatMap(extractTransactions)
 
     memPool.putWithoutCheck(rolledBackTxs).filter { tx =>
-      !appliedTxs.exists(t => t.id == tx.id) && {
+      val toKeep: Boolean = !appliedTxs.exists(t => t.id == tx.id) && {
         state match {
           case v: TransactionValidation[TX] => v.validate(tx).isSuccess
           case _ => true
         }
       }
+      if (!toKeep) log.debug(s"Remove ${tx.id} from mem pool")//Gerui: debug info to trace the removal of a tx
+      toKeep
     }
   }
 

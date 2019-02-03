@@ -135,10 +135,9 @@ object SimpleBoxTransactionPrism extends ScorexEncoding {
       w.secretByPublicImage(b.box.proposition).map(s => (s, b.box.nonce, b.box.value))
     }.toIndexedSeq
     val canSend = from.map(_._3.toLong).sum
-    // TODO: fixme, What should we do if `w.publicKeys` is empty?
 
     // Sending the change back to a random key of the sender
-    val senderPubKeys = w.publicKeys
+    val senderPubKeys = if (w.publicKeys.isEmpty) w.generateNewSecret().publicKeys else w.publicKeys
     val randomPosition = scala.util.Random.nextInt(senderPubKeys.size)
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
     val changeTx: (PublicKey25519Proposition, Value) = (senderPubKeys.toVector(randomPosition), Value @@ (canSend - amount - fee))
