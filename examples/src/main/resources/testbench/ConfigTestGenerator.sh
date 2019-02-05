@@ -13,7 +13,7 @@ rm -rf /tmp/scorex/*
 while read -r line || [[ -n "$line" ]]; do
     IFS=':, ' read -r -a array <<< "$line"
     if [ "${#array[@]}" -ge "1" ]; then
-        conf00="scorex {\n dataDir = /tmp/scorex/data${array[0]}/blockchain\n logDir = /tmp/scorex/data${array[0]}/log\n\n restApi {\n bindAddress = \"127.0.0.${array[0]}:$((9081+4*${array[0]}))\"\n api-key-hash = \"\"\n}\n\nnetwork {\n nodeName = \"generatorNode${array[0]}\"\n bindAddress = \"127.0.0.${array[0]}:$((9080+4*${array[0]}))\"\n knownPeers = ["
+        conf00="scorex {\n dataDir = /tmp/scorex/data${array[0]}/blockchain\n logDir = /tmp/scorex/data${array[0]}/log\n\n restApi {\n bindAddress = \"127.0.0.${array[0]}:$((9081+4*${array[0]}))\"\n api-key-hash = \"\"\n}\n\nnetwork {\n nodeName = \"node${array[0]}\"\n bindAddress = \"127.0.0.${array[0]}:$((9080+4*${array[0]}))\"\n knownPeers = ["
         peers=""
         for peer in "${array[@]: 1}"; do
             printf -v peers "$peers, \"127.0.0.$peer:$((9080+4*$peer))\""
@@ -21,13 +21,13 @@ while read -r line || [[ -n "$line" ]]; do
         peers="${peers#,}"
         conf01="]\n agentName = \"2-Hop\"\n}\nminer {\n offlineGeneration = "
         if [ "${array[0]}" -eq "1" ]; then
-            booleanvalue="true"
+            booleanvalue="false"
         else
-            booleanvalue="true"
+            booleanvalue="false"
         fi
         #offlineGeneration = true or false?
-        conf02="\n targetBlockDelay = 2s\n blockGenerationDelay = 500ms\n rParamX10 = 8\n initialDifficulty = 1\n posAttachmentSize = 1\n blockNetworkTransmissionDelay = 50ms\n minerNumber = \"${array[0]}\"\n txGenerationRate = 500ms\n}\nwallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n}\n}\n"
-        printf "$conf00$peers$conf01$booleanvalue$conf02" > "$my_dir/settings${array[0]}.conf"
+        conf02="\n targetBlockDelay = 2s\n blockGenerationDelay = 100ms\n rParamX10 = 8\n initialDifficulty = 1\n posAttachmentSize = 1\n blockNetworkTransmissionDelay = 5ms\n minerNumber = \"${array[0]}\"\n txGenerationRate = 100ms\n}\nwallet {\n seed = \"minerNode${array[0]}\"\n password = \"cookies${array[0]}\"\n walletDir = \"/tmp/scorex/data${array[0]}/wallet\"\n}\n}\n"
+        printf "$conf00$peers$conf01$booleanvalue$conf02" > "$my_dir/testsettings${array[0]}.conf"
     fi
 done < "$my_dir/$1"
 

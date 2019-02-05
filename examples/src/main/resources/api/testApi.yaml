@@ -222,106 +222,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
-  /peers/blacklisted:
-    get:
-      summary: Get blacklisted peers
-      operationId: getBlacklistedPeers
-      tags:
-        - peers
-      responses:
-        200:
-          description: Array of peer objects
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlacklistedPeers'
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-
-  /utils/seed:
-    get:
-      summary: Get random seed with 32 bytes size
-      operationId: getRandomSeed
-      tags:
-        - utils
-      responses:
-        200:
-          description: Base15-encoded 32 byte seed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Digest32'
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-
-  /utils/seed/{length}:
-    get:
-      summary: Generate random seed of specified length in bytes
-      operationId: getRandomSeedWithLength
-      tags:
-        - utils
-      parameters:
-        - in: path
-          name: length
-          required: true
-          description: seed length in bytes
-          schema:
-            type: string
-      responses:
-        200:
-          description: Base16-encoded N byte seed
-          content:
-            application/json:
-              schema:
-                type: string
-                format: base16
-                example: 4e4ddea9ac11c7f55cf98c7af28166e9e7ecfac9ca1079ca7d04c3d66251a7d8
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-
-  /utils/hash/blake2b:
-    post:
-      summary: Return Blake2b hash of specified message
-      operationId: hashBlake2b
-      tags:
-        - utils
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: string
-              format: base16
-              example: 27cda3fa0526ffcfff754baa7886c30a05a21c9b01e4b91b5627a5c578f0bd16
-      responses:
-        200:
-          description: Base16-encoded 32 byte hash
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Digest32'
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiError'
-
   /wallet/transfer:
     post:
-      summary: Make a transaction
+      summary: Make a transaction to one recipient
       operationId: transfer
       tags:
         - wallet
@@ -355,4 +258,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiError'
+
+  /wallet/multitransfer:
+    post:
+      summary: Make a transaction to multiple recipients
+      operationId: multitransfer
+      tags:
+        - wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: array
+                  items:
+                    type: integer
+                recipient:
+                  type: array
+                  items:
+                    type: string
+                fee:
+                  type: integer
+              example:
+                amount: [10,20]
+                recipient: [ede56a0c0df10af89afdab4a3cf1b5af9019af65367f64bde7aa259ab8f7d449, 3f6f38607387b83dec30c4e1936188c771536716f2bd053ee5f13b686aa26062]
+                fee: 3
+      responses:
+        200:
+          description: The generated transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
 

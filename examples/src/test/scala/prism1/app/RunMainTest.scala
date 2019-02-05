@@ -1,20 +1,29 @@
 package prism1.app
 
+import akka.actor.ActorRef
+import akka.pattern.ask
+import akka.util.Timeout
+import examples.commons.SimpleBoxTransactionPrismMemPool
 import examples.prism1.PrismV1App
 import examples.prism1.history.HybridHistory
 import examples.prism1.mining.HybridSettings
+import examples.prism1.state.HBoxStoredState
+import examples.prism1.wallet.HBoxWallet
 import org.scalatest.PropSpec
+import scorex.core.NodeViewHolder.ReceivableMessages.GetDataFromCurrentView
 import scorex.core.utils.NetworkTimeProvider
 import scorex.util.ModifierId
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class RunMainTest extends PropSpec {
   /**
-    * Please run configGenerator.sh first
+    * Please run ConfigGenerator.sh first
     */
   import RunMainTest._
-  ignore("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+  property("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
     " 2) both 2 nodes mine blocks") {
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
@@ -23,12 +32,12 @@ class RunMainTest extends PropSpec {
     app2.run()
     Thread.sleep(180000)
     
-    val hybridHistory1 = hybridHistoryGenerator(app1.hybridSettings)
+    val hybridHistory1 = getNodeView(app1.nodeViewHolderRef)._1
     val minerIds1 = chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
     val ids1 = chainIds(hybridHistory1)
 
-    val hybridHistory2 = hybridHistoryGenerator(app2.hybridSettings)
+    val hybridHistory2 = getNodeView(app2.nodeViewHolderRef)._1
     val minerIds2 = chainMinerIds(hybridHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
     val ids2 = chainIds(hybridHistory2)
@@ -48,14 +57,13 @@ class RunMainTest extends PropSpec {
     println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
   }
 
-  property("Start 2 nodes, wait for 50s, shutdown one node, wait 20s, restart it, wait 50s. then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+  ignore("Start 2 nodes, wait for 50s, shutdown one node, wait 20s, restart it, wait 50s. then check 1) two views of chain are consistent. (one is the prefix of the other)" +
     " 2) both 2 nodes mine blocks") {
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
 
     app2.run()
-    Thread.sleep(2000)
     app1.run()
     Thread.sleep(50000)
 
@@ -66,12 +74,12 @@ class RunMainTest extends PropSpec {
     app2restart.run()
     Thread.sleep(50000)
 
-    val hybridHistory1 = hybridHistoryGenerator(app1.hybridSettings)
+    val hybridHistory1 = getNodeView(app1.nodeViewHolderRef)._1
     val minerIds1 = chainMinerIds(hybridHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
     val ids1 = chainIds(hybridHistory1)
 
-    val hybridHistory2 = hybridHistoryGenerator(app2restart.hybridSettings)
+    val hybridHistory2 = getNodeView(app2restart.nodeViewHolderRef)._1
     val minerIds2 = chainMinerIds(hybridHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
     val ids2 = chainIds(hybridHistory2)
@@ -94,6 +102,18 @@ class RunMainTest extends PropSpec {
 }
 
 object RunMainTest {
+
+  type NodeView = (HybridHistory, HBoxStoredState, HBoxWallet, SimpleBoxTransactionPrismMemPool)
+
+  private implicit val timeout = Timeout(5 seconds)
+  def getNodeView(nvh: ActorRef): NodeView = {
+    val future = nvh ? GetDataFromCurrentView[HybridHistory,
+      HBoxStoredState,
+      HBoxWallet,
+      SimpleBoxTransactionPrismMemPool,
+      NodeView] { v => (v.history, v.state, v.vault, v.pool) }
+    Await.result(future, timeout.duration).asInstanceOf[NodeView]
+  }
   def hybridHistoryGenerator(hybridSettings: HybridSettings): HybridHistory = {
     HybridHistory.readOrGenerateNoValidation(hybridSettings.scorexSettings, hybridSettings.mining, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
   }

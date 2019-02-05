@@ -28,7 +28,7 @@ case class WalletApiRoute(override val settings: RESTApiSettings, nodeViewHolder
   val DefaultFee: Int = 100
 
   override val route: Route = (pathPrefix("wallet") & withCors) {
-    balances ~ transfer
+    balances ~ transfer ~ multitransfer
   }
 
   def transfer: Route = (post & path("transfer")) {
@@ -47,6 +47,36 @@ case class WalletApiRoute(override val settings: RESTApiSettings, nodeViewHolder
               val recipient: PublicKey25519Proposition = PublicKey25519Proposition(PublicKey @@ encoder.decode((json \\ "recipient").head.asString.get).get)
               val fee: Long = (json \\ "fee").headOption.flatMap(_.asNumber).flatMap(_.toLong).getOrElse(DefaultFee)
               val tx = SimpleBoxTransactionPrism.create(wallet, Seq((recipient, Value @@ amount)), fee).get
+              nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](tx)
+              tx.asJson
+            } match {
+              case Success(resp) => ApiResponse(resp)
+              case Failure(e) => ApiError(e)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def multitransfer: Route = (post & path("multitransfer")) {
+    entity(as[String]) { body =>
+      withAuth {
+        withNodeView { view =>
+          parse(body) match {
+            case Left(failure) => ApiError(failure.getCause)
+            case Right(json) => Try {
+              val wallet = view.vault
+              // TODO: Can we do this extraction in a safer way (not calling head/get)?
+              @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+              val amounts: Seq[Value] = (json \\ "amount").head.asArray.get.map(amount => Value @@ amount.asNumber.get.toLong.get)
+              // TODO: Can we do this extraction in a safer way (not calling head/get)?
+              @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+              val recipients: Seq[PublicKey25519Proposition] = (json \\ "recipient").head.asArray.get.map {
+                pubkey => PublicKey25519Proposition(PublicKey @@ encoder.decode(pubkey.asString.get).get)
+              }
+              val fee: Long = (json \\ "fee").headOption.flatMap(_.asNumber).flatMap(_.toLong).getOrElse(DefaultFee)
+              val tx = SimpleBoxTransactionPrism.create(wallet, recipients zip amounts, fee).get
               nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](tx)
               tx.asJson
             } match {

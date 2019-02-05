@@ -102,12 +102,12 @@ trait NodeViewHolder[TX <: Transaction, PMOD <: PersistentNodeViewModifier]
             context.system.eventStream.publish(SuccessfulTransaction[TX](tx))
 
           case Failure(e) =>
-            e.printStackTrace()
+            log.debug("Tx validation fails",e)
             context.system.eventStream.publish(FailedTransaction[TX](tx, e))
         }
 
       case Some(e) =>
-        e.printStackTrace()
+        log.debug("Tx validation fails",e)
         context.system.eventStream.publish(FailedTransaction[TX](tx, e))
     }
   }
