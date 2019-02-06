@@ -6,25 +6,24 @@ import akka.util.Timeout
 import examples.commons.SimpleBoxTransactionPrismMemPool
 import examples.prism1.PrismV1App
 import examples.prism1.history.HybridHistory
-import examples.prism1.mining.HybridSettings
 import examples.prism1.state.HBoxStoredState
 import examples.prism1.wallet.HBoxWallet
 import org.scalatest.PropSpec
 import scorex.core.NodeViewHolder.ReceivableMessages.GetDataFromCurrentView
-import scorex.core.utils.NetworkTimeProvider
 import scorex.util.ModifierId
 
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.sys.process._
 
 class RunMainTest extends PropSpec {
   /**
     * Please run ConfigGenerator.sh first
     */
   import RunMainTest._
-  property("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+  ignore("Start 2 nodes, wait for 3min, then check 1) two views of chain are consistent. (one is the prefix of the other)" +
     " 2) both 2 nodes mine blocks") {
+    "src/main/resources/testbench/ConfigGenerator.sh topology.txt" !
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
@@ -57,8 +56,9 @@ class RunMainTest extends PropSpec {
     println(s"chain of node2: miner1 ($count21), miner 2 ($count22)")
   }
 
-  ignore("Start 2 nodes, wait for 50s, shutdown one node, wait 20s, restart it, wait 50s. then check 1) two views of chain are consistent. (one is the prefix of the other)" +
+  property("Start 2 nodes, wait for 50s, shutdown one node, wait 20s, restart it, wait 50s. then check 1) two views of chain are consistent. (one is the prefix of the other)" +
     " 2) both 2 nodes mine blocks") {
+    "src/main/resources/testbench/ConfigGenerator.sh topology.txt" !
 
     val app1 = new PrismV1App("src/main/resources/testbench/settings1.conf")
     val app2 = new PrismV1App("src/main/resources/testbench/settings2.conf")
@@ -114,14 +114,7 @@ object RunMainTest {
       NodeView] { v => (v.history, v.state, v.vault, v.pool) }
     Await.result(future, timeout.duration).asInstanceOf[NodeView]
   }
-  def hybridHistoryGenerator(hybridSettings: HybridSettings): HybridHistory = {
-    HybridHistory.readOrGenerateNoValidation(hybridSettings.scorexSettings, hybridSettings.mining, new NetworkTimeProvider(hybridSettings.scorexSettings.ntp))
-  }
 
-  def hybridHistoryGenerator(userConfigPath: String): HybridHistory = {
-    val hybridSettings = HybridSettings.read(Some(userConfigPath))
-    hybridHistoryGenerator(hybridSettings)
-  }
   def chainIds(hybridHistory: HybridHistory): Seq[ModifierId] = {
     hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.id)
   }

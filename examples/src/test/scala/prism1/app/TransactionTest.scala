@@ -1,22 +1,20 @@
 package prism1.app
 
-import examples.commons.{SimpleBoxTransactionPrism, Value}
+import examples.commons.{Nonce, SimpleBoxTransactionPrism, Value}
 import examples.prism1.PrismV1App
 import examples.prism1.mining.PowMiner.ReceivableMessages.{StartMining, StopMining}
 import org.scalatest.PropSpec
 import scorex.core.NodeViewHolder.ReceivableMessages.LocallyGeneratedTransaction
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
+import scorex.core.transaction.state.PrivateKey25519Companion
 import scorex.core.utils.ScorexEncoding
 import scorex.crypto.signatures.PublicKey
 
 import scala.sys.process._
-import scala.util.{Failure, Success, Try}
 
 
 class TransactionTest extends PropSpec with ScorexEncoding{
-  /**
-    * Please run ConfigTestGenerator.sh first
-    */
+
   import RunMainTest._
 
   ignore("Send StartMining/StopMining to miner, it should start/stop mining") {
@@ -46,7 +44,7 @@ class TransactionTest extends PropSpec with ScorexEncoding{
     app.miner ! StartMining
     Thread.sleep(10000)
     app.miner ! StopMining
-    Thread.sleep(5000)
+    Thread.sleep(1000)
     var view = getNodeView(app.nodeViewHolderRef)
     val balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
     assert(balance > 0)//it mines some blocks, so it should have coins
@@ -74,9 +72,9 @@ class TransactionTest extends PropSpec with ScorexEncoding{
     app.run()
     Thread.sleep(1000)
     app.miner ! StartMining
-    Thread.sleep(10000)
-    app.miner ! StopMining
     Thread.sleep(5000)
+    app.miner ! StopMining
+    Thread.sleep(1000)
     var view = getNodeView(app.nodeViewHolderRef)
     val balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
     assert(balance > 0)//it mines some blocks, so it should have coins
@@ -93,6 +91,77 @@ class TransactionTest extends PropSpec with ScorexEncoding{
     view = getNodeView(app.nodeViewHolderRef)
     assert(view._4.contains(tx))//mem pool should contain this tx
     assert(!view._4.contains(tx2))//mem pool should not contain this tx2
+  }
+
+  property("Test for invalid tx. Steps: 1) tx with negative amount 2) with negative fee 3) input!=output=fee 4) with wrong input boxes 5) with wrong signature") {
+    "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
+
+    val app = new PrismV1App("src/main/resources/testbench/testsettings1.conf")
+    app.run()
+    Thread.sleep(1000)
+    app.miner ! StartMining
+    Thread.sleep(5000)
+    app.miner ! StopMining
+    Thread.sleep(1000)
+    var view = getNodeView(app.nodeViewHolderRef)
+    val balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
+    assert(balance > 0)//it mines some blocks, so it should have coins
+    assert(view._4.size == 0)//it doesn't generate/receive tx, so mem pool should be empty
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+    val recipient: PublicKey25519Proposition = PublicKey25519Proposition(PublicKey @@ encoder.decode("000000000000000a5177e290a0b1496751123eaef21992bcf5b20b9956bd1967").get)// a fake recipient
+    val fee: Long = 1L
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+    val tx: SimpleBoxTransactionPrism = SimpleBoxTransactionPrism.create(view._3, Seq((recipient, Value @@ (balance - fee))), fee).get
+
+    {
+      val toInvalid: IndexedSeq[(PublicKey25519Proposition, Value)] =
+        tx.to.map(p => (p._1, Value @@ (-p._2 - 1)))
+      val txInvalid = tx.copy(to = toInvalid)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    {
+      val txInvalid = tx.copy(fee = -10L)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    {
+      val toInvalid: IndexedSeq[(PublicKey25519Proposition, Value)] =
+        tx.to.map(p => (p._1, Value @@ (p._2 * 2 + 1)))
+      val txInvalid = tx.copy(to = toInvalid)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    {
+      val fromInvalid: IndexedSeq[(PublicKey25519Proposition, Nonce)] = tx.from.drop(1)//remove the first one input box
+      val txInvalid = tx.copy(from = fromInvalid)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    {
+      val keyInvalid = PrivateKey25519Companion.generateKeys("anyString".getBytes)
+      val fromInvalidHead: (PublicKey25519Proposition, Nonce) = (keyInvalid._2, tx.from(1)._2)//remove the first one input box
+      val fromInvalid: IndexedSeq[(PublicKey25519Proposition, Nonce)] = IndexedSeq(fromInvalidHead) ++ tx.from.drop(1)
+      val txInvalid = tx.copy(from = fromInvalid)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    {
+      val keyInvalid = PrivateKey25519Companion.generateKeys("anyString".getBytes)
+      val signaturesInvalid = tx.signatures.map(s => PrivateKey25519Companion.sign(keyInvalid._1, tx.messageToSign))
+      val txInvalid = tx.copy(signatures = signaturesInvalid)
+      app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](txInvalid)
+      view = getNodeView(app.nodeViewHolderRef)
+      assert(!view._4.contains(txInvalid))//mem pool should not contain this tx
+    }
+    app.nodeViewHolderRef ! LocallyGeneratedTransaction[SimpleBoxTransactionPrism](tx)
+    view = getNodeView(app.nodeViewHolderRef)
+    assert(view._4.contains(tx))//mem pool should contain this tx
   }
 }
 

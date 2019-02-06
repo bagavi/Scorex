@@ -482,27 +482,4 @@ object HybridHistory extends ScorexLogging {
     new HybridHistory(storage, settings, validators, Some(logger), timeProvider)
   }
 
-  def readOrGenerateNoValidation(settings: ScorexSettings, minerSettings: HybridMiningSettings, timeProvider: NetworkTimeProvider): HybridHistory = {
-    readOrGenerateNoValidation(settings.dataDir, settings.logDir, minerSettings, timeProvider)
-  }
-
-  def readOrGenerateNoValidation(dataDir: File, logDir: File, settings: HybridMiningSettings, timeProvider: NetworkTimeProvider): HybridHistory = {
-    val iFile = new File(s"${dataDir.getAbsolutePath}/blocks")
-    iFile.mkdirs()
-    val blockStorage = new LSMStore(iFile, maxJournalEntryCount = 10000)
-
-    val logger = new FileLogger(logDir.getAbsolutePath + "/tails.data")
-
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        log.info("Closing block storage...")
-        blockStorage.close()
-      }
-    })
-
-    val storage = new HistoryStorage(blockStorage, settings)
-    val validators = Seq()
-
-    new HybridHistory(storage, settings, validators, Some(logger), timeProvider)
-  }
 }
