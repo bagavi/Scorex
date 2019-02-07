@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
 trait NodeViewHolderGenerators {
-  this: ModifierGenerators with StateGenerators with HistoryGenerators with HybridTypes =>
+  this: ModifierGenerators with StateGenerators with HistoryGenerators with BitcoinTypes =>
 
   class NodeViewHolderForTests(h: HT, s: ST) extends BitcoinNodeViewHolder(settings, new NetworkTimeProvider(settings.scorexSettings.ntp)) {
 

@@ -1,7 +1,7 @@
 package bitcoin.primitives
 
 import examples.commons.PublicKey25519NoncedBox
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.core.transaction.state.PrivateKey25519Companion
@@ -11,7 +11,7 @@ class PrivateKey25519Suite extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with HybridGenerators {
+  with BitcoinGenerators {
 
   property("Public key is deterministic") {
     forAll(genBytes(32), minSuccessful(1000)){ seed =>

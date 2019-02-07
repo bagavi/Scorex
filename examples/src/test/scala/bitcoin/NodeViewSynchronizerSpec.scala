@@ -8,7 +8,7 @@ import scorex.testkit.properties.NodeViewSynchronizerTests
 
 class NodeViewSynchronizerSpec
   extends NodeViewSynchronizerTests[SimpleBoxTransactionBitcoin, BitcoinBlock, BitcoinBoxStoredState, BitcoinSyncInfo,
-                                    BitcoinHistory, SimpleBoxTransactionBitcoinMemPool] with HybridGenerators {
+                                    BitcoinHistory, SimpleBoxTransactionBitcoinMemPool] with BitcoinGenerators {
 
   override lazy val memPool: SimpleBoxTransactionBitcoinMemPool = SimpleBoxTransactionBitcoinMemPool.emptyPool
 }

@@ -3,11 +3,11 @@ package bitcoin.difficulty
 import examples.bitcoin.blocks.PowBlock
 import examples.bitcoin.history.BitcoinHistory
 import org.scalatest.PropSpec
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 
 import scala.util.{Failure, Random, Success}
 
-class DifficultyTest extends PropSpec with HybridGenerators{
+class DifficultyTest extends PropSpec with BitcoinGenerators{
 
   property("Generate 10 random blocks, should get a BitcoinHistory of height 11") {
     @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))

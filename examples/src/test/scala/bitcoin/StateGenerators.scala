@@ -10,7 +10,7 @@ import scorex.testkit.generators.CoreGenerators
 
 import scala.util.Random
 
-trait StateGenerators extends StoreGenerators with CoreGenerators{this: HybridGenerators with CoreGenerators with StoreGenerators =>
+trait StateGenerators extends StoreGenerators with CoreGenerators{this: BitcoinGenerators with CoreGenerators with StoreGenerators =>
 
   private val valueSeed = 5000000
   /**

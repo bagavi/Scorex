@@ -17,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
 trait NodeViewSynchronizerGenerators {
-  this: ModifierGenerators with StateGenerators with HistoryGenerators with HybridTypes with CoreGenerators with ExamplesCommonGenerators =>
+  this: ModifierGenerators with StateGenerators with HistoryGenerators with BitcoinTypes with CoreGenerators with ExamplesCommonGenerators =>
 
   object NodeViewSynchronizerForTests {
     def props(networkControllerRef: ActorRef,

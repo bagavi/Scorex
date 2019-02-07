@@ -1,7 +1,7 @@
 package bitcoin.history
 
 import examples.bitcoin.history.{BitcoinHistory, BitcoinSyncInfo}
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -15,7 +15,7 @@ class BitcoinHistorySpecification extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with HybridGenerators
+  with BitcoinGenerators
   with ScorexEncoding {
 
   //make forAll try for minSuccessful = BitcoinHistory.DifficultyRecalcPeriod times

@@ -4,13 +4,13 @@ import examples.bitcoin.blocks.PowBlock
 import examples.bitcoin.history.BitcoinHistory
 import org.scalatest.PropSpec
 import Generator.randomPowBlockGenerator
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import scorex.crypto.hash.Blake2b256
 import scorex.util.{ModifierId, bytesToId}
 
 import scala.util.{Failure, Success}
 
-class HistoryTest extends PropSpec with HybridGenerators {
+class HistoryTest extends PropSpec with BitcoinGenerators {
 //  val userConfigPath = "src/main/resources/settings.conf" // whether use this or above path?
 
 //  override val settings: BitcoinSettings = BitcoinSettings.read(Some(userConfigPath))

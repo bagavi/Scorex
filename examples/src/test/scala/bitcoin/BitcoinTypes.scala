@@ -8,7 +8,7 @@ import examples.bitcoin.state.BitcoinBoxStoredState
 import scorex.core.consensus.SyncInfo
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 
-trait HybridTypes {
+trait BitcoinTypes {
 
   type P = PublicKey25519Proposition
   type TX = SimpleBoxTransactionBitcoin

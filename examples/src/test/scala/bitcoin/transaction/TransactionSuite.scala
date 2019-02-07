@@ -1,7 +1,7 @@
 package bitcoin.transaction
 
 import examples.commons.SimpleBoxTransactionBitcoin
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import io.iohk.iodb.ByteArrayWrapper
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
@@ -12,7 +12,7 @@ class TransactionSuite extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with HybridGenerators {
+  with BitcoinGenerators {
 
   property("SimpleBoxTransaction preservers inputs ids") {
     forAll(noncedBoxWithKeyListGen, noncedBoxWithKeyListGen) { case (boxesWithKeysIn, boxesWithKeysOut) =>

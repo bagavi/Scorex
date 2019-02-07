@@ -2,7 +2,7 @@ package bitcoin.history
 
 import examples.commons._
 import examples.bitcoin.blocks.{BitcoinBlock, PowBlock}
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import io.iohk.iodb.{ByteArrayWrapper, LSMStore}
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -15,7 +15,7 @@ import scorex.util.ModifierId
 class IODBSpecification extends fixture.PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with HybridGenerators
+  with BitcoinGenerators
   with FileUtils
   with ScorexEncoding {
 

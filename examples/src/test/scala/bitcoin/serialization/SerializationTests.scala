@@ -3,7 +3,7 @@ package bitcoin.serialization
 import examples.commons.{PublicKey25519NoncedBox, PublicKey25519NoncedBoxSerializer, SimpleBoxTransaction}
 import examples.bitcoin.blocks.PowBlock
 import examples.bitcoin.history.{BitcoinSyncInfo, BitcoinSyncInfoSerializer}
-import bitcoin.HybridGenerators
+import bitcoin.BitcoinGenerators
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
@@ -14,7 +14,7 @@ class SerializationTests extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with HybridGenerators {
+  with BitcoinGenerators {
 
   property("WalletBox serialization") {
     val walletBoxSerializer =

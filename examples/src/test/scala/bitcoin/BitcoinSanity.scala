@@ -10,7 +10,7 @@ import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.testkit.{BlockchainPerformance, BlockchainSanity}
 
 
-class HybridSanity extends BlockchainSanity[PublicKey25519Proposition,
+class BitcoinSanity extends BlockchainSanity[PublicKey25519Proposition,
   SimpleBoxTransactionBitcoin,
   BitcoinBlock,
   PowBlock,
@@ -19,7 +19,7 @@ class HybridSanity extends BlockchainSanity[PublicKey25519Proposition,
   SimpleBoxTransactionBitcoinMemPool,
   BitcoinBoxStoredState,
   BitcoinHistory] with BlockchainPerformance[SimpleBoxTransactionBitcoin, BitcoinBlock, BitcoinSyncInfo, SimpleBoxTransactionBitcoinMemPool, BitcoinBoxStoredState, BitcoinHistory]
-  with HybridGenerators {
+  with BitcoinGenerators {
 
   private val walletSettings = originalSettings.walletSettings.copy(seed = "p")
 

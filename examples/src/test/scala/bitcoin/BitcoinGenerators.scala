@@ -23,12 +23,12 @@ import scala.concurrent.duration._
 import scala.util.Random
 
 @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-trait HybridGenerators extends ExamplesCommonGenerators
+trait BitcoinGenerators extends ExamplesCommonGenerators
   with StoreGenerators
   with HistoryGenerators
   with StateGenerators
   with ModifierGenerators
-  with HybridTypes
+  with BitcoinTypes
   with NodeViewHolderGenerators
   with NodeViewSynchronizerGenerators
   with FileUtils

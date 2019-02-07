@@ -9,6 +9,6 @@ import scorex.testkit.properties.NodeViewHolderTests
 
 class NodeViewHolderSpec extends NodeViewHolderTests[SimpleBoxTransaction, BitcoinBlock, BitcoinBoxStoredState,
                                                       BitcoinSyncInfo, BitcoinHistory, SimpleBoxTransactionMemPool]
-  with HybridGenerators {
+  with BitcoinGenerators {
   type VL = BitcoinBoxWallet
 }
