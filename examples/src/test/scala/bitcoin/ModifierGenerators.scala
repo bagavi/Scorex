@@ -193,7 +193,7 @@ trait ModifierGenerators {
 
     val powBlocks: Seq[BitcoinBlock] = validPowBlocks(state, parentIds)//semantically valid blocks
 
-//    val validMods: Seq[HybridBlock] = mods
+//    val validMods: Seq[BitcoinBlock] = mods
 
     val validMods: Seq[(BitcoinBlock, BitcoinBlock)] = mods zip powBlocks
 

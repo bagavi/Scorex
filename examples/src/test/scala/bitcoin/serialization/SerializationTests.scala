@@ -48,7 +48,7 @@ class SerializationTests extends PropSpec
   }
 
   property("BitcoinSyncInfo serialization") {
-    forAll(hybridSyncInfoGen) { b: BitcoinSyncInfo =>
+    forAll(bitcoinSyncInfoGen) { b: BitcoinSyncInfo =>
       val parsed = BitcoinSyncInfoSerializer.parseBytes(b.bytes).get
       parsed.bytes shouldEqual b.bytes
     }

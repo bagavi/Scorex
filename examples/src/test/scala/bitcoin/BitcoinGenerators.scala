@@ -40,7 +40,7 @@ trait BitcoinGenerators extends ExamplesCommonGenerators
   val originalSettings = BitcoinSettings.read(Some(userConfigPath))
   override val settings = originalSettings.copy(mining = originalSettings.mining.copy(targetBlockDelay = 3.seconds, initialDifficulty = 1, blockGenerationDelay = 3.seconds, blockNetworkTransmissionDelay = 0.second))
 
-  lazy val hybridSyncInfoGen: Gen[BitcoinSyncInfo] = for {
+  lazy val bitcoinSyncInfoGen: Gen[BitcoinSyncInfo] = for {
     answer <- Arbitrary.arbitrary[Boolean]
     pow <- modifierIdGen
     pows <- Gen.nonEmptyListOf(pow).map(_.take(BitcoinSyncInfo.MaxLastPowBlocks))

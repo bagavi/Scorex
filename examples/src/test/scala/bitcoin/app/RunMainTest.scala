@@ -31,15 +31,15 @@ class RunMainTest extends PropSpec {
     app2.run()
     Thread.sleep(180000)
     
-    val hybridHistory1 = getNodeView(app1.nodeViewHolderRef)._1
-    val minerIds1 = chainMinerIds(hybridHistory1)
+    val bitcoinHistory1 = getNodeView(app1.nodeViewHolderRef)._1
+    val minerIds1 = chainMinerIds(bitcoinHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
-    val ids1 = chainIds(hybridHistory1)
+    val ids1 = chainIds(bitcoinHistory1)
 
-    val hybridHistory2 = getNodeView(app2.nodeViewHolderRef)._1
-    val minerIds2 = chainMinerIds(hybridHistory2)
+    val bitcoinHistory2 = getNodeView(app2.nodeViewHolderRef)._1
+    val minerIds2 = chainMinerIds(bitcoinHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
-    val ids2 = chainIds(hybridHistory2)
+    val ids2 = chainIds(bitcoinHistory2)
 
     val ids1str = ids1.mkString
     val ids2str = ids2.mkString
@@ -74,15 +74,15 @@ class RunMainTest extends PropSpec {
     app2restart.run()
     Thread.sleep(50000)
 
-    val hybridHistory1 = getNodeView(app1.nodeViewHolderRef)._1
-    val minerIds1 = chainMinerIds(hybridHistory1)
+    val bitcoinHistory1 = getNodeView(app1.nodeViewHolderRef)._1
+    val minerIds1 = chainMinerIds(bitcoinHistory1)
     val minerIdMap1 = minerIds1.groupBy(identity).mapValues(_.size)
-    val ids1 = chainIds(hybridHistory1)
+    val ids1 = chainIds(bitcoinHistory1)
 
-    val hybridHistory2 = getNodeView(app2restart.nodeViewHolderRef)._1
-    val minerIds2 = chainMinerIds(hybridHistory2)
+    val bitcoinHistory2 = getNodeView(app2restart.nodeViewHolderRef)._1
+    val minerIds2 = chainMinerIds(bitcoinHistory2)
     val minerIdMap2 = minerIds2.groupBy(identity).mapValues(_.size)
-    val ids2 = chainIds(hybridHistory2)
+    val ids2 = chainIds(bitcoinHistory2)
 
     val ids1str = ids1.mkString
     val ids2str = ids2.mkString
@@ -115,11 +115,11 @@ object RunMainTest {
     Await.result(future, timeout.duration).asInstanceOf[NodeView]
   }
 
-  def chainIds(hybridHistory: BitcoinHistory): Seq[ModifierId] = {
-    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.id)
+  def chainIds(bitcoinHistory: BitcoinHistory): Seq[ModifierId] = {
+    bitcoinHistory.lastPowBlocks(Int.MaxValue, bitcoinHistory.bestPowBlock).map(_.id)
   }
 
-  def chainMinerIds(hybridHistory: BitcoinHistory): Seq[ModifierId] = {
-    hybridHistory.lastPowBlocks(Int.MaxValue, hybridHistory.bestPowBlock).map(_.minerId)
+  def chainMinerIds(bitcoinHistory: BitcoinHistory): Seq[ModifierId] = {
+    bitcoinHistory.lastPowBlocks(Int.MaxValue, bitcoinHistory.bestPowBlock).map(_.minerId)
   }
 }
