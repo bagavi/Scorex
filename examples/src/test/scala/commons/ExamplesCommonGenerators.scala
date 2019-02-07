@@ -1,6 +1,6 @@
 package commons
 
-import examples.commons.{Nonce, SimpleBoxTransaction, SimpleBoxTransactionPrism, Value}
+import examples.commons.{Nonce, SimpleBoxTransaction, SimpleBoxTransactionBitcoin, Value}
 import org.scalacheck.Gen
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.transaction.state.PrivateKey25519
@@ -32,15 +32,15 @@ trait ExamplesCommonGenerators extends CoreGenerators {
     txs <- smallInt.flatMap(i => Gen.listOfN(i, simpleBoxTransactionGen))
   } yield txs
 
-  lazy val simpleBoxTransactionPrismGen: Gen[SimpleBoxTransactionPrism] = for {
+  lazy val simpleBoxTransactionBitcoinGen: Gen[SimpleBoxTransactionBitcoin] = for {
     fee <- positiveLongGen
     timestamp <- positiveLongGen
     from: IndexedSeq[(PrivateKey25519, Nonce)] <- smallInt.flatMap(i => Gen.listOfN(i + 1, privGen).map(_.toIndexedSeq))
     to: IndexedSeq[(PublicKey25519Proposition, Value)] <- smallInt.flatMap(i => Gen.listOfN(i, pGen).map(_.toIndexedSeq))
-  } yield SimpleBoxTransactionPrism(from, to, fee, timestamp)
+  } yield SimpleBoxTransactionBitcoin(from, to, fee, timestamp)
 
-  lazy val simpleBoxTransactionsPrismGen: Gen[List[SimpleBoxTransactionPrism]] = for {
-    txs <- smallInt.flatMap(i => Gen.listOfN(i, simpleBoxTransactionPrismGen))
+  lazy val simpleBoxTransactionsBitcoinGen: Gen[List[SimpleBoxTransactionBitcoin]] = for {
+    txs <- smallInt.flatMap(i => Gen.listOfN(i, simpleBoxTransactionBitcoinGen))
   } yield txs
 
   def simpleBoxTransactionGenCustomMakeBoxes(toBoxes: IndexedSeq[(PublicKey25519Proposition, Value)]): Gen[SimpleBoxTransaction] = for {
@@ -57,17 +57,17 @@ trait ExamplesCommonGenerators extends CoreGenerators {
     to: IndexedSeq[(PublicKey25519Proposition, Value)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i, pGen).map(_.toIndexedSeq))
   } yield SimpleBoxTransaction(from, to, fee, timestamp)
 
-  def simpleBoxTransactionPrismGenCustomMakeBoxes(toBoxes: IndexedSeq[(PublicKey25519Proposition, Value)]): Gen[SimpleBoxTransactionPrism] = for {
+  def simpleBoxTransactionBitcoinGenCustomMakeBoxes(toBoxes: IndexedSeq[(PublicKey25519Proposition, Value)]): Gen[SimpleBoxTransactionBitcoin] = for {
     fee <- positiveLongGen
     timestamp <- positiveLongGen
     from: IndexedSeq[(PrivateKey25519, Nonce)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i + 1, privGen).map(_.toIndexedSeq))
     to = toBoxes
-  } yield SimpleBoxTransactionPrism(from, to, fee, timestamp)
+  } yield SimpleBoxTransactionBitcoin(from, to, fee, timestamp)
 
-  def simpleBoxTransactionPrismGenCustomUseBoxes(fromBoxes: IndexedSeq[(PrivateKey25519, Nonce)]): Gen[SimpleBoxTransactionPrism] = for {
+  def simpleBoxTransactionBitcoinGenCustomUseBoxes(fromBoxes: IndexedSeq[(PrivateKey25519, Nonce)]): Gen[SimpleBoxTransactionBitcoin] = for {
     fee <- positiveLongGen
     timestamp <- positiveLongGen
     from = fromBoxes
     to: IndexedSeq[(PublicKey25519Proposition, Value)] <- Gen.choose(1, 1).flatMap(i => Gen.listOfN(i, pGen).map(_.toIndexedSeq))
-  } yield SimpleBoxTransactionPrism(from, to, fee, timestamp)
+  } yield SimpleBoxTransactionBitcoin(from, to, fee, timestamp)
 }

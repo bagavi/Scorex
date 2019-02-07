@@ -8,9 +8,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.4.17" % "test"
 )
 
-mainClass in assembly := Some("examples.prism1.PrismV1App")
+mainClass in assembly := Some("examples.bitcoin.BitcoinApp")
 
-assemblyJarName in assembly := "twinsChain.jar"
+assemblyJarName in assembly := "bitcoinBlockchain.jar"
 
 parallelExecution in Test := true
 
@@ -18,4 +18,4 @@ testForkedParallel in Test := true
 
 test in assembly := {}
 
-coverageExcludedPackages := "examples\\.prism1\\.api\\.http.*"
+coverageExcludedPackages := "examples\\.bitcoin\\.api\\.http.*"

@@ -1,1 +1,1 @@
-kill -9 `ps -h | grep java | grep PrismV1App | awk '{print $1}'`
+kill -9 `ps -h | grep java | grep BitcoinApp | awk '{print $1}'`
