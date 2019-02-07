@@ -65,7 +65,7 @@ trait BitcoinGenerators extends ExamplesCommonGenerators
     proposition: PublicKey25519Proposition <- propositionGen
     fakeMinerId = bytesToId(Blake2b256("0"))
   } yield {
-    val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+    val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
     new PowBlockHeader(parentId, timestamp, nonce, proposition, txs.length, txsHash, fakeMinerId)
   }
   // Generate random pow block
@@ -77,7 +77,7 @@ trait BitcoinGenerators extends ExamplesCommonGenerators
     proposition: PublicKey25519Proposition <- propositionGen
     fakeMinerId = bytesToId(Blake2b256("0"))
   } yield {
-    val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+    val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
     PowBlock.create(parentId, timestamp, nonce, proposition, txs, txsHash, fakeMinerId)
   }
 
@@ -163,7 +163,7 @@ trait BitcoinGenerators extends ExamplesCommonGenerators
       proposition: PublicKey25519Proposition <- propositionGen
       fakeMinerId = bytesToId(Blake2b256("0"))
     } yield {
-      val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+      val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
       PowBlock.create(id, timestamp, nonce, proposition, txs, txsHash, fakeMinerId)
 
     }
@@ -190,7 +190,7 @@ trait BitcoinGenerators extends ExamplesCommonGenerators
       case s => s
     }
 
-    val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+    val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
     PowBlock.create(id, timestamp, nonce, proposition, txs, txsHash, minerId)
   }
 

@@ -138,9 +138,10 @@ object BitcoinNodeViewHolder extends ScorexLogging with ScorexEncoding {
       0L))
     /**
       * TODO: change txsHash
+      * we should change code to make different program have same txs, then
       * val txsHash = Blake2b256(PowBlockCompanion.txBytes(genesisTxs))
       */
-    val txsHash = Array.fill(32)(0: Byte)
+    val txsHash = Array.fill(32)(0: Byte) // Special txsHash for genesis
     val minerId = bytesToId(Blake2b256("0")) // The genesis block is not mined by any miner and thus has an id 0
 
     val powGenesis = PowBlock(minerSettings.GenesisParentId,  1481110008516L, 2,

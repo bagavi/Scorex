@@ -180,7 +180,7 @@ object PowMiner extends App {
 
     val timeStamp = System.currentTimeMillis()
 
-    val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+    val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
 
     val b = PowBlock(parentId,  timeStamp, nonce, proposition, txs, txsHash, settings.minerId)
 

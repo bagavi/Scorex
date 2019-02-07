@@ -1,7 +1,7 @@
 package bitcoin
 
-import examples.bitcoin.blocks.PowBlock
-import examples.bitcoin.history.{HistoryStorage, BitcoinHistory}
+import examples.bitcoin.blocks.{PowBlock, PowBlockCompanion}
+import examples.bitcoin.history.{BitcoinHistory, HistoryStorage}
 import examples.bitcoin.mining.BitcoinSettings
 import org.scalacheck.Gen
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
@@ -19,12 +19,9 @@ trait HistoryGenerators {
 
   private val historyTimestamp = 1478164225796L
   private val historyNonce = -308545845552064644L
-  private val historyBrothersCount = 0
-  private val historyBrothersHash = Array.fill(32)(0: Byte)
-  private val historyBrothers = Seq.empty
   private val historyProposition = PublicKey25519Proposition(PublicKey @@ scorex.utils.Random.randomBytes(32))
   private val txs = Seq()
-  private val txsHash = Array.fill(32)(0: Byte)
+  private val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
   private val minerId = bytesToId(Blake2b256("0")) // A fake Id
 
   private lazy val genesisBlock = PowBlock(

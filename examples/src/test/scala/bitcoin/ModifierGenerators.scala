@@ -89,7 +89,7 @@ trait ModifierGenerators {
     val fakeMinerId = bytesToId(Blake2b256("0"))
 
     txsGrouped.zip(parentIds).map{case (blockTxs, parentId) =>
-      val txsHash = if (blockTxs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(blockTxs))
+      val txsHash = Blake2b256(PowBlockCompanion.txBytes(blockTxs))
       val nonce = positiveLongGen.sample.get
       PowBlock.create(parentId, System.currentTimeMillis(), nonce, proposition, blockTxs, txsHash, fakeMinerId)
     }
@@ -118,7 +118,7 @@ trait ModifierGenerators {
       bestPowId = blocks.lastOption.map(_.id).getOrElse(curHistory.bestPowId)
       fakeMinerId = bytesToId(Blake2b256("0"))
     } yield {
-      val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+      val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
       PowBlock.create(bestPowId, timestamp, nonce, proposition, txs, txsHash, fakeMinerId)
     }
   }.sample.get

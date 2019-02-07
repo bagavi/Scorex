@@ -94,7 +94,7 @@ case class PowBlock(override val parentId: BlockId,
 
   lazy val txBytes = serializer.txBytes(transactions)
 
-//  override val txsHash = if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
+//  override val txsHash = Blake2b256(PowBlockCompanion.txBytes(txs))
 
   val txCounts: Int =  transactions.length
 
@@ -169,9 +169,7 @@ object PowBlock extends ScorexEncoding with ScorexLogging {
              txs: Seq[SimpleBoxTransactionBitcoin],
              txsHash: Array[Byte],
              minerId: ModifierId): PowBlock = {
-    require(txsHash sameElements {
-      if (txs.isEmpty) Array.fill(32)(0: Byte) else Blake2b256(PowBlockCompanion.txBytes(txs))
-    })
+    require(txsHash sameElements Blake2b256(PowBlockCompanion.txBytes(txs)))
     PowBlock(parentId,  timestamp, nonce, generatorProposition, txs, txsHash, minerId)
   }
 }

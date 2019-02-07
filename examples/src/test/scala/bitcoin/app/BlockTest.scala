@@ -2,11 +2,12 @@ package bitcoin.app
 
 import examples.commons.{SimpleBoxTransactionBitcoin, Value}
 import examples.bitcoin.BitcoinApp
-import examples.bitcoin.blocks.PowBlock
+import examples.bitcoin.blocks.{PowBlock, PowBlockCompanion}
 import examples.bitcoin.mining.PowMiner.ReceivableMessages.{PowMiningInfo, StartMining, StopMining}
 import org.scalatest.PropSpec
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.utils.ScorexEncoding
+import scorex.crypto.hash.Blake2b256
 import scorex.crypto.signatures.PublicKey
 import scorex.util.ScorexLogging
 
@@ -18,6 +19,12 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
 
   import RunMainTest._
 
+  property("show empty tx hash") {
+    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
+    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
+    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
+
+  }
   property("Blocks containing invalid tx get in the chain. But txs are rejected") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
@@ -42,6 +49,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
       @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
       val pubkey = view._3.publicKeys.headOption getOrElse view._3.generateNewSecret().publicKeys.head
       val pmiValid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx))
+      println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin](tx)))))
       app.miner ! pmiValid
       Thread.sleep(2000)
       view = getNodeView(app.nodeViewHolderRef)
@@ -93,7 +101,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
 
   }
 
-  property("Block containing 2 conflicting tx get in the chain. But the txs are rejected") {
+  ignore("Block containing 2 conflicting tx get in the chain. But the txs are rejected") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
     val app = new BitcoinApp("src/main/resources/testbench/testsettings1.conf")
@@ -128,7 +136,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
 
   }
 
-  property("2 Blocks containing 2 conflicting tx get in the chain. But the second tx is rejected") {
+  ignore("2 Blocks containing 2 conflicting tx get in the chain. But the second tx is rejected") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
     val app = new BitcoinApp("src/main/resources/testbench/testsettings1.conf")
