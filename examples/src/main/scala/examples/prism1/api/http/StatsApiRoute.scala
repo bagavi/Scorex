@@ -20,7 +20,7 @@ case class StatsApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     with ScorexEncoding {
 
   override val route: Route = (pathPrefix("stats") & withCors) {
-    tail ~ meanDifficulty ~ txCountchain ~ diffchain ~ timechain
+    tail ~ meanDifficulty ~ txCountchain ~ diffchain ~ timechain ~ minerId
   }
 
   def tail: Route = (get & path("tail" / IntNumber)) { num =>
@@ -50,8 +50,7 @@ case class StatsApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
       val lastBlocks = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock)
       val timestamps = Array(1481110008516L)++ lastBlocks.map { b => b.timestamp}
       val fc = lastBlocks.zipWithIndex.map {
-        case (b,i) => s"${encoder.encodeId(b.id).substring(0,6)} (${view.history.storage.getPoWDifficulty(Some(b.id)).toString};" +
-          s"${timestamps(i+1)-timestamps(i)})"
+        case (b,i) => s"${encoder.encodeId(b.id).substring(0,6)} (${timestamps(i+1)-timestamps(i)})"
       }
       ApiResponse("history" -> fc.mkString(" <- "))
     }
@@ -71,6 +70,16 @@ case class StatsApiRoute(override val settings: RESTApiSettings, nodeViewHolderR
     withNodeView { view =>
       val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
         b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.transactions.length})"
+      }
+      ApiResponse("history" -> fc.mkString(" <- "))
+    }
+  }
+
+
+  def minerId: Route = (get & path("minerid")) {
+    withNodeView { view =>
+      val fc = view.history.lastPowBlocks(Int.MaxValue, view.history.bestPowBlock).map {
+        b => s"${encoder.encodeId(b.id).substring(0,6)} (${b.minerId.substring(0,6)})"
       }
       ApiResponse("history" -> fc.mkString(" <- "))
     }
