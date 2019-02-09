@@ -1,13 +1,12 @@
 package bitcoin.app
 
-import examples.commons.{SimpleBoxTransactionBitcoin, Value}
 import examples.bitcoin.BitcoinApp
-import examples.bitcoin.blocks.{PowBlock, PowBlockCompanion}
+import examples.bitcoin.blocks.PowBlock
 import examples.bitcoin.mining.PowMiner.ReceivableMessages.{PowMiningInfo, StartMining, StopMining}
+import examples.commons.{SimpleBoxTransactionBitcoin, Value}
 import org.scalatest.PropSpec
 import scorex.core.transaction.box.proposition.PublicKey25519Proposition
 import scorex.core.utils.ScorexEncoding
-import scorex.crypto.hash.Blake2b256
 import scorex.crypto.signatures.PublicKey
 import scorex.util.ScorexLogging
 
@@ -19,13 +18,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
 
   import RunMainTest._
 
-  property("show empty tx hash") {
-    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
-    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
-    println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin]()))))
-
-  }
-  property("Blocks containing invalid tx get in the chain. But txs are rejected") {
+  property("Blocks containing invalid tx does not get in the chain.") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
     val app = new BitcoinApp("src/main/resources/testbench/testsettings1.conf")
@@ -49,7 +42,6 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
       @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
       val pubkey = view._3.publicKeys.headOption getOrElse view._3.generateNewSecret().publicKeys.head
       val pmiValid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx))
-      println("Hash=",encoder.encode(Blake2b256(PowBlockCompanion.txBytes(Seq[SimpleBoxTransactionBitcoin](tx)))))
       app.miner ! pmiValid
       Thread.sleep(2000)
       view = getNodeView(app.nodeViewHolderRef)
@@ -74,7 +66,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
       app.miner ! pmiInvalid
       Thread.sleep(2000)
       view = getNodeView(app.nodeViewHolderRef)
-      assert(view._1.bestPowBlock.parentId == bestBlock.id)
+      assert(view._1.bestPowId == bestBlock.id)
       assert(balance == view._3.boxes().map(_.box).map(_.value.toLong).sum)
       balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
       bestBlock = view._1.bestPowBlock
@@ -93,7 +85,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
       app.miner ! pmiInvalid
       Thread.sleep(2000)
       view = getNodeView(app.nodeViewHolderRef)
-      assert(view._1.bestPowBlock.parentId == bestBlock.id)
+      assert(view._1.bestPowId == bestBlock.id)
       assert(balance == view._3.boxes().map(_.box).map(_.value.toLong).sum)
       balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
       bestBlock = view._1.bestPowBlock
@@ -101,7 +93,7 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
 
   }
 
-  ignore("Block containing 2 conflicting tx get in the chain. But the txs are rejected") {
+  property("Block containing 2 conflicting tx doesn't get in the chain.") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
     val app = new BitcoinApp("src/main/resources/testbench/testsettings1.conf")
@@ -120,23 +112,24 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
     val recipient: PublicKey25519Proposition = PublicKey25519Proposition(PublicKey @@ encoder.decode("000000000000000a5177e290a0b1496751123eaef21992bcf5b20b9956bd1967").get)//a fake recipient.
     val fee: Long = 1L
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
-    val tx: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ 2L)), fee).get
+    val tx: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ (balance - fee))), fee).get
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+    val tx2: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ (balance - fee))), fee).get
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
     val pubkey = view._3.publicKeys.headOption getOrElse view._3.generateNewSecret().publicKeys.head
-    val txInvalid = tx.copy(timestamp = System.currentTimeMillis())
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
-    val pmiInvalid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx, txInvalid))
+    val pmiInvalid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx, tx2))
     app.miner ! pmiInvalid
     Thread.sleep(2000)
     view = getNodeView(app.nodeViewHolderRef)
-    assert(view._1.bestPowBlock.parentId == bestBlock.id)
+    assert(view._1.bestPowId == bestBlock.id)
     assert(balance == view._3.boxes().map(_.box).map(_.value.toLong).sum)
     balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
     bestBlock = view._1.bestPowBlock
 
   }
 
-  ignore("2 Blocks containing 2 conflicting tx get in the chain. But the second tx is rejected") {
+  property("2 Blocks containing 2 conflicting tx get into the chain. But the second tx is rejected") {
     "src/main/resources/testbench/ConfigTestGenerator.sh topology.txt" !
 
     val app = new BitcoinApp("src/main/resources/testbench/testsettings1.conf")
@@ -155,7 +148,9 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
     val recipient: PublicKey25519Proposition = PublicKey25519Proposition(PublicKey @@ encoder.decode("000000000000000a5177e290a0b1496751123eaef21992bcf5b20b9956bd1967").get)//a fake recipient.
     val fee: Long = 1L
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
-    val tx: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ 2L)), fee).get
+    val tx: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ (balance - fee))), fee).get
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps", "org.wartremover.warts.OptionPartial"))
+    val tx2: SimpleBoxTransactionBitcoin = SimpleBoxTransactionBitcoin.create(view._3, Seq((recipient, Value @@ (balance - fee))), fee).get
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
     val pubkey = view._3.publicKeys.headOption getOrElse view._3.generateNewSecret().publicKeys.head
     val pmiValid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx))
@@ -163,13 +158,12 @@ class BlockTest extends PropSpec with ScorexEncoding with ScorexLogging{
     Thread.sleep(2000)
     view = getNodeView(app.nodeViewHolderRef)
     assert(view._1.bestPowBlock.parentId == bestBlock.id)
-    assert(balance + 83 - 2 - 1 == view._3.boxes().map(_.box).map(_.value.toLong).sum)
+    assert(83 == view._3.boxes().map(_.box).map(_.value.toLong).sum)
     balance = view._3.boxes().map(_.box).map(_.value.toLong).sum
     bestBlock = view._1.bestPowBlock
 
-    val txInvalid = tx.copy(timestamp = System.currentTimeMillis())
     @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
-    val pmiInvalid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(txInvalid))
+    val pmiInvalid = PowMiningInfo(view._1.powDifficulty, view._1.bestPowBlock, pubkey ,Seq(tx2))
     app.miner ! pmiInvalid
     Thread.sleep(2000)
     view = getNodeView(app.nodeViewHolderRef)
