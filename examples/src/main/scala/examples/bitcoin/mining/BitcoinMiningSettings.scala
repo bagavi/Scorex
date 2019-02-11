@@ -30,7 +30,8 @@ case class BitcoinMiningSettings(offlineGeneration: Boolean,
                                  initialDifficulty: BigInt,
                                  blockNetworkTransmissionDelay: FiniteDuration,
                                  txGenerationRate: FiniteDuration,
-                                 minerNumber: String) {
+                                 minerNumber: String,
+                                 txsPerBlock: Int) {
   lazy val MaxTarget = BigInt(1, Array.fill(32)(Byte.MinValue))
   lazy val GenesisParentId = bytesToId(Array.fill(32)(0: Byte))
   lazy val minerId = bytesToId(Blake2b256(minerNumber))

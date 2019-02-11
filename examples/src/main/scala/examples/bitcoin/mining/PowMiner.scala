@@ -34,7 +34,7 @@ class PowMiner(viewHolderRef: ActorRef, settings: BitcoinMiningSettings)(implici
 
   private var cancellableOpt: Option[Cancellable] = None
   private var mining = false
-  private val TransactionsPerBlock: Int = 50
+  private val TransactionsPerBlock: Int = settings.txsPerBlock
   private val getRequiredData: GetDataFromCurrentView[BitcoinHistory,
     BitcoinBoxStoredState,
     BitcoinBoxWallet,

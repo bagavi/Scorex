@@ -18,11 +18,11 @@ class SemanticBlockValidator(hash: CryptographicHash[_ <: Digest]) extends Block
         //All tx must be valid
         require(powBlock.transactions.forall(tx => tx.semanticValidity.isSuccess))
         //No box (coin) should be double spent by two txs
-        powBlock.transactions.map(_.boxIdsToOpen).foldLeft(IndexedSeq[ADKey]()) {
-          (partialSet, ids) =>
-            require(ids.forall(id => !partialSet.exists(_ sameElements id)))
-            partialSet ++ ids
-        }
+//        powBlock.transactions.map(_.boxIdsToOpen).foldLeft(IndexedSeq[ADKey]()) {
+//          (partialSet, ids) =>
+//            require(ids.forall(id => !partialSet.exists(_ sameElements id)))
+//            partialSet ++ ids
+//        }
     }
   }
 }
