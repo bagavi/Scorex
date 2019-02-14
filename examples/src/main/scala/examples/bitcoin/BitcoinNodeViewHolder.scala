@@ -1,6 +1,7 @@
 package examples.bitcoin
 
 import akka.actor.{ActorRef, ActorSystem, Props}
+import com.google.common.primitives.Ints
 import examples.bitcoin.blocks._
 import examples.bitcoin.history.{BitcoinHistory, BitcoinSyncInfo}
 import examples.bitcoin.mining.{BitcoinMiningSettings, BitcoinSettings}
@@ -61,11 +62,11 @@ class BitcoinNodeViewHolder(bitcoinSettings: BitcoinSettings,
 
 object BitcoinNodeViewHolder extends ScorexLogging with ScorexEncoding {
 
-  private val GenesisAccountsNum = 2
+  private val GenesisAccountsNum = 80
 
-  private val icoMembers: IndexedSeq[PublicKey25519Proposition] = IndexedSeq(
-    "Gh5ipRV2fzCn5176CPHnW4EVk9MR2HU6m91ZhoPxUwHN",
-    "5r37KJVi3DSKsh5atfhdN6CbpvEh6mKwEZvzuCWjtcf1"
+//  private val icoMembers: IndexedSeq[PublicKey25519Proposition] = IndexedSeq(
+//    "Gh5ipRV2fzCn5176CPHnW4EVk9MR2HU6m91ZhoPxUwHN",
+//    "5r37KJVi3DSKsh5atfhdN6CbpvEh6mKwEZvzuCWjtcf1"
 //    "71bFWP8JFmCiGS9m9b6GZfwmtgFUb1WDHmfk5mb63YEf",
 //    "7r3XqE1ZvTHzmd6teP3kUBm1KvAi2Kwkfj69VSo7VpPW",
 //    "Bf4GE6HBLbsHzGex93uYb1nN52HeBKfVC84ZxDraH3ZB",
@@ -114,9 +115,17 @@ object BitcoinNodeViewHolder extends ScorexLogging with ScorexEncoding {
 //    "GXkCiK2P7khngAtfhG8TSqm4nfPbpMDNFBiG8CF41ZtP",
 //    "8etCeR343fg5gktxMh5j64zofFvWuyNTwmHAzWbsptoC",
 //    "AnwYrjV3yb9NuYWz31C758TZGTUCLD7zZdSYubbewygt"
-  ).map(s => PublicKey25519Proposition(PublicKey @@ Base58.decode(s).get))
-    .ensuring(_.length == GenesisAccountsNum)
+//  ).map(s => PublicKey25519Proposition(PublicKey @@ Base58.decode(s).get))
+//    .ensuring(_.length == GenesisAccountsNum)
 
+  /**
+    * Change icoMembers to the miner nodes.
+    * The seed in the string should be same as in settings, e.g. "node_$i".
+    */
+  private val icoMembers: IndexedSeq[PublicKey25519Proposition] = (0 until GenesisAccountsNum).map(i => s"node_$i").map(
+    s => PrivateKey25519Companion.generateKeys(Blake2b256(s.getBytes("UTF-8") ++ Ints.toByteArray(0)))._2
+  )
+  
   def generateGenesisState(bitcoinSettings: BitcoinSettings,
                            timeProvider: NetworkTimeProvider):
   (BitcoinHistory, BitcoinBoxStoredState, BitcoinBoxWallet, SimpleBoxTransactionBitcoinMemPool) = {
