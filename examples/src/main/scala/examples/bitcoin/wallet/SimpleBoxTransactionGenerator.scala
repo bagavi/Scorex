@@ -60,9 +60,9 @@ class SimpleBoxTransactionGenerator(viewHolderRef: ActorRef)(implicit ec: Execut
 
     val pubkeys = wallet.publicKeys.toSeq
     while (wallet.publicKeys.toSeq.size < 20) wallet.generateNewSecret()
-    val recipients = scala.util.Random.shuffle(pubkeys).take(Random.nextInt(4))
-      .map(r => (r, Value @@ (1 + Random.nextInt(5).toLong)))
-    val tx = SimpleBoxTransactionBitcoin.create(wallet, recipients, 1 + Random.nextInt(2), ex)
+    val recipients = scala.util.Random.shuffle(pubkeys).take(1)
+      .map(r => (r, Value @@ (1.toLong)))
+    val tx = SimpleBoxTransactionBitcoin.create(wallet, recipients, 0, Seq())
     tx.map(t => t.boxIdsToOpen.foreach(id => ex += id))
     tx
   }
