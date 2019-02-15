@@ -89,8 +89,8 @@ case class BitcoinBoxWallet(seed: Array[Byte], store: LSMStore)
     }
 
     val boxIdsToRemove = changes.toRemove.view.map(_.boxId).map(ByteArrayWrapper.apply)
-    val newBoxIds: ByteArrayWrapper = boxIds.filter(bi => !boxIdsToRemove.exists(w => java.util.Arrays.equals(w.data, bi))).flatten)
-                                      ++ ByteArrayWrapper(newBoxes.toArray.flatMap(_._1.data)
+    val newBoxIds: ByteArrayWrapper = ByteArrayWrapper( newBoxes.toArray.flatMap(_._1.data) ++
+      boxIds.filter(bi => !boxIdsToRemove.exists(w => java.util.Arrays.equals(w.data, bi))).flatten)
     store.update(idToBAW(modifier.id), boxIdsToRemove, Seq(BoxIdsKey -> newBoxIds) ++ newBoxes)
     log.debug(s"Successfully applied modifier to wallet: ${encoder.encodeId(modifier.id)}")
 
