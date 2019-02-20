@@ -6,11 +6,10 @@ This is developed over Score [https://github.com/input-output-hk/Scorex](https:/
 Motivation
 ----------
 
- Bitcoin Core source code contains more 100K lines of code(80K of C++ only), Nxt is more than 45K
- line of Java code. All parts of the design(network/transactional/consensus protocols) are mixed in a hard way.
+ Bitcoin Core source code contains more 100K lines of code(80K of C++ only). All parts of the design(network/transactional/consensus protocols) are mixed in a hard way.
  So researchers and developers are not in good start positions to make experiments.
 
-However, Scorex Bitcoin implements Bitcoin in less than 3k lines of Scala code and this allows researchers to prototype over bitcoin.
+In Scorex Bitcoin, we've implemented Bitcoin in less than 5k lines of Scala code and this allows researchers to prototype over bitcoin.
 Features
 --------
 
