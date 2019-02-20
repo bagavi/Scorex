@@ -1,4 +1,4 @@
-Scorex Bitcoin - Lightweight blockchain framework for Bitcoin.
+Scorex Bitcoin - Lightweight Bitcoin protocol framework.
 ====================================================================================================================================================================================
 This is developed over Score [https://github.com/input-output-hk/Scorex](https://github.com/input-output-hk/Scorex).
 
@@ -9,7 +9,7 @@ Motivation
  Bitcoin Core source code contains more 100K lines of code(80K of C++ only). All parts of the design(network/transactional/consensus protocols) are mixed in a hard way.
  So researchers and developers are not in good start positions to make experiments.
 
-**In Scorex Bitcoin, we've implemented Bitcoin in less than 5k lines of Scala code and this allows researchers to prototype over bitcoin.**
+**In Scorex Bitcoin, we've implemented the Bitcoin protocol in less than 5k lines of Scala code and this allows researchers to prototype over the bitcoin protocol.**
 
 Features
 --------
