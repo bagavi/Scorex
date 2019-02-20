@@ -1,13 +1,6 @@
-Scorex 2 - The modular blockchain framework [![Build Status](https://travis-ci.org/ScorexFoundation/Scorex.svg?branch=master)](https://travis-ci.org/ScorexFoundation/Scorex) [![Coverage Status](https://coveralls.io/repos/github/ScorexFoundation/Scorex/badge.svg?branch=scoverage-reports)](https://coveralls.io/github/ScorexFoundation/Scorex?branch=scoverage-reports)
+Scorex Bitcoin - The modular lightweight blockchain framework running Bitcoin.
 ====================================================================================================================================================================================
-
-[![Join the chat at https://gitter.im/input-output-hk/Scorex](https://badges.gitter.im/input-output-hk/Scorex.svg)](https://gitter.im/input-output-hk/Scorex?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Scorex and Scorex 2
--------------------
-
-It is experimental and still raw new major release of the Scorex. Previous
-version with documentation could be found at [https://github.com/input-output-hk/Scorex](https://github.com/input-output-hk/Scorex).
+This is developed over Score [https://github.com/input-output-hk/Scorex](https://github.com/input-output-hk/Scorex).
 
 
 Motivation
@@ -17,9 +10,7 @@ Motivation
  line of Java code. All parts of the design(network/transactional/consensus protocols) are mixed in a hard way.
  So researchers and developers are not in good start positions to make experiments.
 
- In opposite, Scorex core is less than 4K lines of Scala code. Abstract core concepts allow to implement a broad range
- of systems, including ones with multiple types of blocks and non-linear history.
-
+However, Scorex Bitcoin implements Bitcoin in less than 3k lines of Scala code and this allows researchers to prototype over bitcoin.
 Features
 --------
 
@@ -35,22 +26,7 @@ Features
 Documentation
 -------------
 
-[Please refer to the tutorial](https://github.com/ScorexFoundation/ScorexTutorial)
-
-
-Examples
---------
-
-There are two examples of blockchain systems built with Scorex. Details are available in 
-the [dedicated readme](examples/README.md).
-
-
-
-Contributions
--------------
-
-Contributions are welcome! Please take a look into [issues](https://github.com/ScorexFoundation/ScorexTutorial/issues).
- Testing codebase is very small at the moment, so writing a test is not just good for start, but useful for the product as well.
+Coming soon.
 
 License
 -------
