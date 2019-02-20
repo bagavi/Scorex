@@ -1,4 +1,4 @@
-Scorex Bitcoin - The modular lightweight blockchain framework running Bitcoin.
+Scorex Bitcoin - Lightweight blockchain framework for Bitcoin.
 ====================================================================================================================================================================================
 This is developed over Score [https://github.com/input-output-hk/Scorex](https://github.com/input-output-hk/Scorex).
 
